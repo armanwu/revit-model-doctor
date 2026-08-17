@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCopyrightAttribute("Copyright (c) 2026 Arman Arisman. All rights reserved.")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute("Revit 2027 Model Doctor - Rule-Based Health Check Engine Add-In")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3a9a898a1337e027dedf7c036f8e1bb9542f766e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d8d21cf185e89a9eacf75f866f9075009873e7c4")]
 [assembly: System.Reflection.AssemblyProductAttribute("ModelDoctor")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ModelDoctor")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

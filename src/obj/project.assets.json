@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "f:\\core\\projects\\github\\revit-model-doctor\\src\\ModelDoctor\\ModelDoctor.csproj",
+      "projectUniqueName": "f:\\core\\projects\\github\\revit-model-doctor\\src\\ModelDoctor.csproj",
       "projectName": "ModelDoctor",
-      "projectPath": "f:\\core\\projects\\github\\revit-model-doctor\\src\\ModelDoctor\\ModelDoctor.csproj",
+      "projectPath": "f:\\core\\projects\\github\\revit-model-doctor\\src\\ModelDoctor.csproj",
       "packagesPath": "C:\\Users\\archdz\\.nuget\\packages\\",
-      "outputPath": "f:\\core\\projects\\github\\revit-model-doctor\\src\\ModelDoctor\\obj\\",
+      "outputPath": "f:\\core\\projects\\github\\revit-model-doctor\\src\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\archdz\\AppData\\Roaming\\NuGet\\NuGet.Config",

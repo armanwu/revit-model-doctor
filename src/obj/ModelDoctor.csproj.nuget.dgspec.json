@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "F:\\core\\projects\\github\\revit-model-doctor\\src\\ModelDoctor\\ModelDoctor.csproj": {}
+    "F:\\core\\projects\\github\\revit-model-doctor\\src\\ModelDoctor.csproj": {}
   },
   "projects": {
-    "F:\\core\\projects\\github\\revit-model-doctor\\src\\ModelDoctor\\ModelDoctor.csproj": {
+    "F:\\core\\projects\\github\\revit-model-doctor\\src\\ModelDoctor.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "F:\\core\\projects\\github\\revit-model-doctor\\src\\ModelDoctor\\ModelDoctor.csproj",
+        "projectUniqueName": "F:\\core\\projects\\github\\revit-model-doctor\\src\\ModelDoctor.csproj",
         "projectName": "ModelDoctor",
-        "projectPath": "F:\\core\\projects\\github\\revit-model-doctor\\src\\ModelDoctor\\ModelDoctor.csproj",
+        "projectPath": "F:\\core\\projects\\github\\revit-model-doctor\\src\\ModelDoctor.csproj",
         "packagesPath": "C:\\Users\\archdz\\.nuget\\packages\\",
-        "outputPath": "F:\\core\\projects\\github\\revit-model-doctor\\src\\ModelDoctor\\obj\\",
+        "outputPath": "F:\\core\\projects\\github\\revit-model-doctor\\src\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\archdz\\AppData\\Roaming\\NuGet\\NuGet.Config",

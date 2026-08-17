@@ -27,7 +27,7 @@ if not exist "%ADDIN_SUBDIR%" (
 )
 
 echo Building C# solution (%REVIT_VERSION% / .NET 10)...
-dotnet build "%~dp0src\ModelDoctor\ModelDoctor.csproj" -c Release
+dotnet build "%~dp0src\ModelDoctor.csproj" -c Release
 
 if %ERRORLEVEL% neq 0 (
     echo.
@@ -37,8 +37,8 @@ if %ERRORLEVEL% neq 0 (
 )
 
 echo Copying compiled files to Revit Add-Ins folder...
-copy /Y "%~dp0src\ModelDoctor\bin\Release\net10.0-windows\ModelDoctor.dll" "%ADDIN_SUBDIR%\"
-copy /Y "%~dp0src\ModelDoctor\Manifest\model-doctor.addin" "%TARGET_DIR%\"
+copy /Y "%~dp0src\bin\Release\net10.0-windows\ModelDoctor.dll" "%ADDIN_SUBDIR%\"
+copy /Y "%~dp0src\Manifest\model-doctor.addin" "%TARGET_DIR%\"
 
 echo ===================================================
 echo [SUCCESS] Model Doctor Add-In installed successfully!
