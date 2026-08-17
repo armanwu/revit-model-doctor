@@ -194,12 +194,19 @@
                            FontSize="12" 
                            VerticalAlignment="Center" 
                            FontWeight="Medium"/>
-                <Button Grid.Column="1" 
-                        Content="Close" 
-                        Command="{Binding CloseCommand}" 
-                        Background="#64748B" 
-                        Foreground="White"
-                        Width="90"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="Export to CSV" 
+                            Command="{Binding ExportCsvCommand}" 
+                            Background="#059669" 
+                            Foreground="White"
+                            Margin="0,0,10,0"
+                            Padding="14,8"/>
+                    <Button Content="Close" 
+                            Command="{Binding CloseCommand}" 
+                            Background="#64748B" 
+                            Foreground="White"
+                            Width="90"/>
+                </StackPanel>
             </Grid>
         </Border>
     </Grid>

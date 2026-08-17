@@ -11,7 +11,7 @@ using System;
 using System.Reflection;
 
 [assembly: System.Reflection.AssemblyCompanyAttribute("Arman Arisman")]
-[assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
+[assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyCopyrightAttribute("Copyright (c) 2026 Arman Arisman. All rights reserved.")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute("Revit 2027 Model Doctor - Rule-Based Health Check Engine Add-In")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
