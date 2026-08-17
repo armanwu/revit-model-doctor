@@ -157,6 +157,7 @@
                     <Border Grid.Row="2" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="4" Margin="0,0,0,10">
                         <ListBox ItemsSource="{Binding OffendingElements}" 
                                  SelectedItem="{Binding SelectedElement}"
+                                 MouseDoubleClick="ListBox_MouseDoubleClick"
                                  BorderThickness="0">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
@@ -169,8 +170,14 @@
                         </ListBox>
                     </Border>
 
-                    <!-- Action Button -->
+                    <!-- Action Buttons -->
                     <StackPanel Grid.Row="3">
+                        <Button Content="Select &amp; Show in Revit" 
+                                Command="{Binding SelectAndShowElementCommand}" 
+                                Background="#2563EB" 
+                                Foreground="White" 
+                                Height="34"
+                                Margin="0,0,0,6"/>
                         <Button Content="Copy Selected Element ID" 
                                 Command="{Binding CopySelectedElementIdCommand}" 
                                 Background="#0EA5E9" 

@@ -18,5 +18,13 @@ namespace ModelDoctor.Views
                 viewModel.RequestClose = () => Close();
             }
         }
+
+        private void ListBox_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (DataContext is HealthCheckDashboardViewModel vm && vm.SelectAndShowElementCommand.CanExecute(null))
+            {
+                vm.SelectAndShowElementCommand.Execute(null);
+            }
+        }
     }
 }

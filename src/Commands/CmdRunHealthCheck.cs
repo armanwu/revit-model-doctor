@@ -59,13 +59,22 @@ namespace ModelDoctor.Commands
                 }
             }
 
-            // Open interactive WPF Dashboard Window
+            // Open interactive WPF Dashboard Window (Modeless)
             try
             {
-                var viewModel = new HealthCheckDashboardViewModel(doc, results);
+                var selectHandler = new SelectElementHandler();
+                var selectEvent = ExternalEvent.Create(selectHandler);
+
+                var viewModel = new HealthCheckDashboardViewModel(uiDoc, results, selectEvent, selectHandler);
                 var view = new HealthCheckDashboardView(viewModel);
 
-                view.ShowDialog();
+                if (uiApp != null && uiApp.MainWindowHandle != IntPtr.Zero)
+                {
+                    var helper = new System.Windows.Interop.WindowInteropHelper(view);
+                    helper.Owner = uiApp.MainWindowHandle;
+                }
+
+                view.Show();
             }
             catch (Exception ex)
             {

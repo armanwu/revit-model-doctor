@@ -9,6 +9,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using Autodesk.Revit.DB;
+using Autodesk.Revit.UI;
 using ModelDoctor.Core;
 
 namespace ModelDoctor.ViewModels
@@ -21,6 +22,9 @@ namespace ModelDoctor.ViewModels
         private HealthRuleResult? _selectedRule;
         private OffendingElementInfo? _selectedElement;
 
+        public UIDocument? UiDoc { get; }
+        public ExternalEvent? SelectElementEvent { get; }
+        public SelectElementHandler? SelectElementHandler { get; }
         public string DocumentTitle { get; }
         public string AuditTime { get; }
         public ObservableCollection<HealthRuleResult> RuleResults { get; }
@@ -47,23 +51,66 @@ namespace ModelDoctor.ViewModels
         public IEnumerable<OffendingElementInfo> OffendingElements =>
             SelectedRule?.OffendingElements ?? Enumerable.Empty<OffendingElementInfo>();
 
+        public ICommand SelectAndShowElementCommand { get; }
         public ICommand CopySelectedElementIdCommand { get; }
         public ICommand ExportCsvCommand { get; }
         public ICommand CloseCommand { get; }
 
         public Action? RequestClose { get; set; }
 
-        public HealthCheckDashboardViewModel(Document? doc, IEnumerable<HealthRuleResult> results)
+        public HealthCheckDashboardViewModel(
+            UIDocument? uiDoc, 
+            IEnumerable<HealthRuleResult> results,
+            ExternalEvent? selectElementEvent = null,
+            SelectElementHandler? selectElementHandler = null)
         {
+            UiDoc = uiDoc;
+            SelectElementEvent = selectElementEvent;
+            SelectElementHandler = selectElementHandler;
+
+            Document? doc = uiDoc?.Document;
+
             DocumentTitle = doc?.Title ?? "Unknown Document";
             AuditTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             RuleResults = new ObservableCollection<HealthRuleResult>(results ?? Enumerable.Empty<HealthRuleResult>());
 
             SelectedRule = RuleResults.FirstOrDefault();
 
+            SelectAndShowElementCommand = new RelayCommand(ExecuteSelectAndShowElement, _ => SelectedElement != null);
             CopySelectedElementIdCommand = new RelayCommand(ExecuteCopySelectedElementId, _ => SelectedElement != null);
             ExportCsvCommand = new RelayCommand(ExecuteExportCsv, _ => RuleResults != null && RuleResults.Count > 0);
             CloseCommand = new RelayCommand(_ => RequestClose?.Invoke());
+        }
+
+        private void ExecuteSelectAndShowElement(object? parameter)
+        {
+            if (SelectedElement == null) return;
+
+            ElementId elementId = SelectedElement.ElementId;
+            if (elementId == null || elementId == ElementId.InvalidElementId)
+            {
+                MessageBox.Show("Invalid or non-existent Element ID.", "Model Doctor", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (SelectElementHandler != null && SelectElementEvent != null)
+            {
+                SelectElementHandler.ElementIdToSelect = elementId;
+                SelectElementEvent.Raise();
+            }
+            else if (UiDoc != null)
+            {
+                try
+                {
+                    var idList = new List<ElementId> { elementId };
+                    UiDoc.Selection.SetElementIds(idList);
+                    UiDoc.ShowElements(elementId);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Could not select/show element in Revit:\n{ex.Message}", "Model Doctor Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
         }
 
         private void ExecuteCopySelectedElementId(object? parameter)
