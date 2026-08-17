@@ -27,6 +27,12 @@
     </Reference>
   </ItemGroup>
 
+  <!-- Include Icons as WPF Resources and Embedded Resources -->
+  <ItemGroup>
+    <Resource Include="Icon\**\*.*" />
+    <EmbeddedResource Include="Icon\**\*.*" />
+  </ItemGroup>
+
   <!-- Include Revit Add-In Manifest in Output -->
   <ItemGroup>
     <None Update="Manifest\model-doctor.addin">
