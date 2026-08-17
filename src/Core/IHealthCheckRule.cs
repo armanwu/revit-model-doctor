@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Autodesk.Revit.DB;
 
 namespace ModelDoctor.Core
@@ -16,7 +17,7 @@ namespace ModelDoctor.Core
         /// Executes the rule against the specified Revit Document.
         /// </summary>
         /// <param name="doc">The active Revit document to audit.</param>
-        /// <returns>A <see cref="HealthRuleResult"/> containing status and offending element details.</returns>
-        HealthRuleResult Execute(Document doc);
+        /// <returns>A collection of <see cref="HealthRuleResult"/> containing status and offending element details.</returns>
+        IEnumerable<HealthRuleResult> Execute(Document doc);
     }
 }

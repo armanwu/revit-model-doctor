@@ -15,7 +15,7 @@ namespace ModelDoctor.Rules
         public string Name => "Direct CAD Imports Check";
 
         /// <inheritdoc />
-        public HealthRuleResult Execute(Document doc)
+        public IEnumerable<HealthRuleResult> Execute(Document doc)
         {
             ArgumentNullException.ThrowIfNull(doc);
 
@@ -37,16 +37,19 @@ namespace ModelDoctor.Rules
             int count = offendingList.Count;
             HealthStatus status = count == 0 ? HealthStatus.Pass : HealthStatus.Warning;
 
-            return new HealthRuleResult
+            return new[]
             {
-                RuleName = Name,
-                Category = "Imports & Links",
-                Description = count == 0
-                    ? "No directly imported CAD files found in the model."
-                    : $"Found {count} directly imported CAD file(s). Select an Element ID from the list to view its specific details.",
-                Status = status,
-                Count = count,
-                OffendingElements = offendingList
+                new HealthRuleResult
+                {
+                    RuleName = Name,
+                    Category = "Imports & Links",
+                    Description = count == 0
+                        ? "No directly imported CAD files found in the model."
+                        : $"Found {count} directly imported CAD file(s). Select an Element ID from the list to view its specific details.",
+                    Status = status,
+                    Count = count,
+                    OffendingElements = offendingList
+                }
             };
         }
     }

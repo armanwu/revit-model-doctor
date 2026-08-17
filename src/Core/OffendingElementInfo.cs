@@ -21,5 +21,10 @@ namespace ModelDoctor.Core
         /// Specific error or warning description for this element.
         /// </summary>
         public string IssueDescription { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets whether this offending element has been marked as Ignored / Suppressed.
+        /// </summary>
+        public bool IsIgnored { get; set; }
     }
 }

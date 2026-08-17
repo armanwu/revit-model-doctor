@@ -22,17 +22,36 @@ namespace ModelDoctor.Core
                 return;
 
             UIDocument? uiDoc = app?.ActiveUIDocument;
-            if (uiDoc == null) return;
+            Document? doc = uiDoc?.Document;
+            if (uiDoc == null || doc == null) return;
 
             try
             {
-                var idList = new List<ElementId> { ElementIdToSelect };
-                uiDoc.Selection.SetElementIds(idList);
-                uiDoc.ShowElements(ElementIdToSelect);
+                Element targetElem = doc.GetElement(ElementIdToSelect);
+                if (targetElem == null) return;
+
+                if (targetElem is View targetView)
+                {
+                    // If the target element is a View, activate/open it directly in Revit
+                    if (!targetView.IsTemplate &&
+                        targetView.ViewType != ViewType.Internal &&
+                        targetView.ViewType != ViewType.ProjectBrowser &&
+                        targetView.ViewType != ViewType.SystemBrowser)
+                    {
+                        uiDoc.ActiveView = targetView;
+                    }
+                }
+                else
+                {
+                    // Model / 2D element: select and zoom
+                    var idList = new List<ElementId> { ElementIdToSelect };
+                    uiDoc.Selection.SetElementIds(idList);
+                    uiDoc.ShowElements(ElementIdToSelect);
+                }
             }
             catch
             {
-                // Silently swallow if element is deleted or non-viewable in active view context
+                // Silently swallow if element is deleted or cannot be opened in active context
             }
         }
 

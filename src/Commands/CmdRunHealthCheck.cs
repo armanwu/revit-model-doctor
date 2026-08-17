@@ -33,18 +33,38 @@ namespace ModelDoctor.Commands
             var rules = new List<IHealthCheckRule>
             {
                 new CadImportRule(),
+                new InPlaceFamilyRule(),
+                new UnpinnedElementsRule(),
+                new UnplacedViewsRule(),
+                new ViewTemplateRule(),
                 new WarningCountRule()
             };
 
             var results = new List<HealthRuleResult>();
+
+            // Retrieve stored ignored element IDs from ExtensibleStorage
+            HashSet<long> ignoredElementIds = IgnoreStorageService.GetIgnoredElementIds(doc);
 
             // Execute each rule with error handling
             foreach (var rule in rules)
             {
                 try
                 {
-                    HealthRuleResult result = rule.Execute(doc);
-                    results.Add(result);
+                    var ruleResults = rule.Execute(doc);
+                    foreach (var res in ruleResults)
+                    {
+                        if (res.OffendingElements != null)
+                        {
+                            foreach (var elem in res.OffendingElements)
+                            {
+                                if (elem.ElementId != null && ignoredElementIds.Contains(elem.ElementId.Value))
+                                {
+                                    elem.IsIgnored = true;
+                                }
+                            }
+                        }
+                    }
+                    results.AddRange(ruleResults);
                 }
                 catch (Exception ex)
                 {
@@ -65,7 +85,17 @@ namespace ModelDoctor.Commands
                 var selectHandler = new SelectElementHandler();
                 var selectEvent = ExternalEvent.Create(selectHandler);
 
-                var viewModel = new HealthCheckDashboardViewModel(uiDoc, results, selectEvent, selectHandler);
+                var ignoreHandler = new IgnoreElementHandler();
+                var ignoreEvent = ExternalEvent.Create(ignoreHandler);
+
+                var viewModel = new HealthCheckDashboardViewModel(
+                    uiDoc, 
+                    results, 
+                    selectEvent, 
+                    selectHandler,
+                    ignoreEvent,
+                    ignoreHandler);
+
                 var view = new HealthCheckDashboardView(viewModel);
 
                 if (uiApp != null && uiApp.MainWindowHandle != IntPtr.Zero)

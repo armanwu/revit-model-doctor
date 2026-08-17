@@ -22,12 +22,30 @@ namespace ModelDoctor.ViewModels
         private HealthRuleResult? _selectedRule;
         private OffendingElementInfo? _selectedElement;
 
+        private bool _showIgnoredItems;
+
         public UIDocument? UiDoc { get; }
         public ExternalEvent? SelectElementEvent { get; }
         public SelectElementHandler? SelectElementHandler { get; }
+        public ExternalEvent? IgnoreElementEvent { get; }
+        public IgnoreElementHandler? IgnoreElementHandler { get; }
+
         public string DocumentTitle { get; }
         public string AuditTime { get; }
         public ObservableCollection<HealthRuleResult> RuleResults { get; }
+
+        public bool ShowIgnoredItems
+        {
+            get => _showIgnoredItems;
+            set
+            {
+                if (SetProperty(ref _showIgnoredItems, value))
+                {
+                    OnPropertyChanged(nameof(OffendingElements));
+                    SelectedElement = OffendingElements.FirstOrDefault();
+                }
+            }
+        }
 
         public HealthRuleResult? SelectedRule
         {
@@ -48,10 +66,23 @@ namespace ModelDoctor.ViewModels
             set => SetProperty(ref _selectedElement, value);
         }
 
-        public IEnumerable<OffendingElementInfo> OffendingElements =>
-            SelectedRule?.OffendingElements ?? Enumerable.Empty<OffendingElementInfo>();
+        public IEnumerable<OffendingElementInfo> OffendingElements
+        {
+            get
+            {
+                if (SelectedRule?.OffendingElements == null)
+                    return Enumerable.Empty<OffendingElementInfo>();
+
+                if (ShowIgnoredItems)
+                    return SelectedRule.OffendingElements;
+
+                return SelectedRule.OffendingElements.Where(e => !e.IsIgnored);
+            }
+        }
 
         public ICommand SelectAndShowElementCommand { get; }
+        public ICommand IgnoreSelectedElementCommand { get; }
+        public ICommand UnignoreSelectedElementCommand { get; }
         public ICommand CopySelectedElementIdCommand { get; }
         public ICommand ExportCsvCommand { get; }
         public ICommand CloseCommand { get; }
@@ -62,11 +93,15 @@ namespace ModelDoctor.ViewModels
             UIDocument? uiDoc, 
             IEnumerable<HealthRuleResult> results,
             ExternalEvent? selectElementEvent = null,
-            SelectElementHandler? selectElementHandler = null)
+            SelectElementHandler? selectElementHandler = null,
+            ExternalEvent? ignoreElementEvent = null,
+            IgnoreElementHandler? ignoreElementHandler = null)
         {
             UiDoc = uiDoc;
             SelectElementEvent = selectElementEvent;
             SelectElementHandler = selectElementHandler;
+            IgnoreElementEvent = ignoreElementEvent;
+            IgnoreElementHandler = ignoreElementHandler;
 
             Document? doc = uiDoc?.Document;
 
@@ -77,9 +112,13 @@ namespace ModelDoctor.ViewModels
             SelectedRule = RuleResults.FirstOrDefault();
 
             SelectAndShowElementCommand = new RelayCommand(ExecuteSelectAndShowElement, _ => SelectedElement != null);
+            IgnoreSelectedElementCommand = new RelayCommand(ExecuteIgnoreSelectedElement, _ => SelectedElement != null && !SelectedElement.IsIgnored);
+            UnignoreSelectedElementCommand = new RelayCommand(ExecuteUnignoreSelectedElement, _ => SelectedElement != null && SelectedElement.IsIgnored);
             CopySelectedElementIdCommand = new RelayCommand(ExecuteCopySelectedElementId, _ => SelectedElement != null);
             ExportCsvCommand = new RelayCommand(ExecuteExportCsv, _ => RuleResults != null && RuleResults.Count > 0);
             CloseCommand = new RelayCommand(_ => RequestClose?.Invoke());
+
+            RecalculateCountsAndStatuses();
         }
 
         private void ExecuteSelectAndShowElement(object? parameter)
@@ -102,15 +141,74 @@ namespace ModelDoctor.ViewModels
             {
                 try
                 {
-                    var idList = new List<ElementId> { elementId };
-                    UiDoc.Selection.SetElementIds(idList);
-                    UiDoc.ShowElements(elementId);
+                    Element targetElem = UiDoc.Document.GetElement(elementId);
+                    if (targetElem is View targetView && !targetView.IsTemplate)
+                    {
+                        UiDoc.ActiveView = targetView;
+                    }
+                    else
+                    {
+                        var idList = new List<ElementId> { elementId };
+                        UiDoc.Selection.SetElementIds(idList);
+                        UiDoc.ShowElements(elementId);
+                    }
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Could not select/show element in Revit:\n{ex.Message}", "Model Doctor Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
+        }
+
+        private void ExecuteIgnoreSelectedElement(object? parameter)
+        {
+            if (SelectedElement == null) return;
+            SelectedElement.IsIgnored = true;
+
+            if (IgnoreElementHandler != null && IgnoreElementEvent != null)
+            {
+                IgnoreElementHandler.TargetElementId = SelectedElement.ElementId;
+                IgnoreElementHandler.ActionType = IgnoreActionType.Ignore;
+                IgnoreElementHandler.OnCompleted = () => RecalculateCountsAndStatuses();
+                IgnoreElementEvent.Raise();
+            }
+
+            RecalculateCountsAndStatuses();
+        }
+
+        private void ExecuteUnignoreSelectedElement(object? parameter)
+        {
+            if (SelectedElement == null) return;
+            SelectedElement.IsIgnored = false;
+
+            if (IgnoreElementHandler != null && IgnoreElementEvent != null)
+            {
+                IgnoreElementHandler.TargetElementId = SelectedElement.ElementId;
+                IgnoreElementHandler.ActionType = IgnoreActionType.Unignore;
+                IgnoreElementHandler.OnCompleted = () => RecalculateCountsAndStatuses();
+                IgnoreElementEvent.Raise();
+            }
+
+            RecalculateCountsAndStatuses();
+        }
+
+        public void RecalculateCountsAndStatuses()
+        {
+            foreach (var rule in RuleResults)
+            {
+                if (rule.OffendingElements != null)
+                {
+                    int activeCount = rule.OffendingElements.Count(e => !e.IsIgnored);
+                    rule.Count = activeCount;
+                    if (activeCount == 0)
+                        rule.Status = HealthStatus.Pass;
+                    else if (activeCount < 15)
+                        rule.Status = HealthStatus.Warning;
+                    else
+                        rule.Status = HealthStatus.Fail;
+                }
+            }
+            OnPropertyChanged(nameof(OffendingElements));
         }
 
         private void ExecuteCopySelectedElementId(object? parameter)

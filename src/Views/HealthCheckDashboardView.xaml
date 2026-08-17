@@ -146,12 +146,22 @@
 
                     <TextBlock Grid.Row="0" Text="Offending Elements List" FontSize="15" FontWeight="Bold" Foreground="#1E293B" Margin="0,0,0,6"/>
 
-                    <StackPanel Grid.Row="1" Margin="0,0,0,8">
-                        <Border Background="#E0F2FE" CornerRadius="4" Padding="6,3" HorizontalAlignment="Left">
-                            <TextBlock Text="{Binding SelectedRule.Category, StringFormat='Category: {0}'}" FontSize="11" FontWeight="Bold" Foreground="#0369A1"/>
-                        </Border>
-                        <TextBlock Text="{Binding SelectedRule.RuleName, StringFormat='Rule: {0}'}" FontSize="13" FontWeight="SemiBold" Foreground="#334155" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
+                    <DockPanel Grid.Row="1" Margin="0,0,0,8">
+                        <CheckBox Content="Show Ignored" 
+                                  IsChecked="{Binding ShowIgnoredItems}" 
+                                  DockPanel.Dock="Right" 
+                                  VerticalAlignment="Center" 
+                                  HorizontalAlignment="Right" 
+                                  FontSize="11" 
+                                  Foreground="#64748B" 
+                                  FontWeight="Medium"/>
+                        <StackPanel DockPanel.Dock="Left">
+                            <Border Background="#E0F2FE" CornerRadius="4" Padding="6,3" HorizontalAlignment="Left">
+                                <TextBlock Text="{Binding SelectedRule.Category, StringFormat='Category: {0}'}" FontSize="11" FontWeight="Bold" Foreground="#0369A1"/>
+                            </Border>
+                            <TextBlock Text="{Binding SelectedRule.RuleName, StringFormat='Rule: {0}'}" FontSize="13" FontWeight="SemiBold" Foreground="#334155" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </DockPanel>
 
                     <!-- Element ID Selection List -->
                     <Border Grid.Row="2" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="4" Margin="0,0,0,10">
@@ -164,6 +174,19 @@
                                     <StackPanel Orientation="Horizontal" Margin="4">
                                         <TextBlock Text="ElementId: " Foreground="#64748B" FontSize="12"/>
                                         <TextBlock Text="{Binding ElementIdValue}" FontWeight="Bold" Foreground="#0F172A" FontSize="12"/>
+                                        <Border Background="#F3F4F6" BorderBrush="#D1D5DB" BorderThickness="1" CornerRadius="3" Padding="4,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsIgnored}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="[Ignored]" Foreground="#6B7280" FontSize="10" FontWeight="SemiBold"/>
+                                        </Border>
                                     </StackPanel>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
@@ -177,12 +200,30 @@
                                 Background="#2563EB" 
                                 Foreground="White" 
                                 Height="34"
-                                Margin="0,0,0,6"/>
+                                Margin="0,0,0,4"/>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Content="Ignore Element" 
+                                    Command="{Binding IgnoreSelectedElementCommand}" 
+                                    Background="#D97706" 
+                                    Foreground="White" 
+                                    Height="32"
+                                    Margin="0,0,2,0"/>
+                            <Button Grid.Column="1" Content="Unignore Element" 
+                                    Command="{Binding UnignoreSelectedElementCommand}" 
+                                    Background="#059669" 
+                                    Foreground="White" 
+                                    Height="32"
+                                    Margin="2,0,0,0"/>
+                        </Grid>
                         <Button Content="Copy Selected Element ID" 
                                 Command="{Binding CopySelectedElementIdCommand}" 
                                 Background="#0EA5E9" 
                                 Foreground="White" 
-                                Height="34"/>
+                                Height="32"/>
                     </StackPanel>
                 </Grid>
             </Border>

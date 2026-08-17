@@ -15,26 +15,50 @@ namespace ModelDoctor.Rules
         public string Name => "Model Warnings Check";
 
         /// <inheritdoc />
-        public HealthRuleResult Execute(Document doc)
+        public IEnumerable<HealthRuleResult> Execute(Document doc)
         {
             ArgumentNullException.ThrowIfNull(doc);
 
             // Retrieve all warning messages from the document
             IList<FailureMessage> warnings = doc.GetWarnings();
-            int warningCount = warnings.Count;
 
-            var offendingList = new List<OffendingElementInfo>();
+            if (warnings.Count == 0)
+            {
+                return new[]
+                {
+                    new HealthRuleResult
+                    {
+                        RuleName = "Model Warnings Check",
+                        Category = "Warnings - Integrity",
+                        Description = "No warnings present in the model.",
+                        Status = HealthStatus.Pass,
+                        Count = 0,
+                        OffendingElements = new List<OffendingElementInfo>()
+                    }
+                };
+            }
+
+            // Temporary storage grouped by (Category, RuleName)
+            var groupedResults = new Dictionary<(string Category, string RuleName), List<OffendingElementInfo>>();
 
             foreach (var w in warnings)
             {
                 string warningText = w.GetDescriptionText();
-                var failingIds = w.GetFailingElements();
+                var (category, ruleName) = WarningClassifier.Classify(warningText);
 
+                var key = (category, ruleName);
+                if (!groupedResults.TryGetValue(key, out var list))
+                {
+                    list = new List<OffendingElementInfo>();
+                    groupedResults[key] = list;
+                }
+
+                var failingIds = w.GetFailingElements();
                 if (failingIds != null && failingIds.Count > 0)
                 {
                     foreach (var id in failingIds)
                     {
-                        offendingList.Add(new OffendingElementInfo
+                        list.Add(new OffendingElementInfo
                         {
                             ElementId = id,
                             IssueDescription = string.IsNullOrWhiteSpace(warningText)
@@ -43,33 +67,37 @@ namespace ModelDoctor.Rules
                         });
                     }
                 }
+                else
+                {
+                    list.Add(new OffendingElementInfo
+                    {
+                        ElementId = ElementId.InvalidElementId,
+                        IssueDescription = string.IsNullOrWhiteSpace(warningText)
+                            ? "General Revit Warning"
+                            : warningText
+                    });
+                }
             }
 
-            HealthStatus status;
-            if (warningCount == 0)
+            var results = new List<HealthRuleResult>();
+
+            foreach (var kvp in groupedResults)
             {
-                status = HealthStatus.Pass;
-            }
-            else if (warningCount < 100)
-            {
-                status = HealthStatus.Warning;
-            }
-            else
-            {
-                status = HealthStatus.Fail;
+                int count = kvp.Value.Count;
+                HealthStatus status = count < 20 ? HealthStatus.Warning : HealthStatus.Fail;
+
+                results.Add(new HealthRuleResult
+                {
+                    RuleName = kvp.Key.RuleName,
+                    Category = kvp.Key.Category,
+                    Description = $"Category contains {count} warning item(s) affecting model elements. Select an Element ID to view details or locate in Revit.",
+                    Status = status,
+                    Count = count,
+                    OffendingElements = kvp.Value
+                });
             }
 
-            return new HealthRuleResult
-            {
-                RuleName = Name,
-                Category = "Model Integrity",
-                Description = warningCount == 0
-                    ? "No warnings present in the model."
-                    : $"Model contains {warningCount} warning(s) affecting {offendingList.Count} failing element entry(ies). Click an Element ID to view its specific warning explanation.",
-                Status = status,
-                Count = warningCount,
-                OffendingElements = offendingList
-            };
+            return results;
         }
     }
 }
