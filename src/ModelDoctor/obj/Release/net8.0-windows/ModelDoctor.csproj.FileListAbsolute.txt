@@ -1,0 +1,6 @@
+F:\core\projects\github\revit-model-doctor\src\ModelDoctor\obj\Release\net8.0-windows\ModelDoctor.csproj.AssemblyReference.cache
+F:\core\projects\github\revit-model-doctor\src\ModelDoctor\obj\Release\net8.0-windows\ModelDoctor.GeneratedMSBuildEditorConfig.editorconfig
+F:\core\projects\github\revit-model-doctor\src\ModelDoctor\obj\Release\net8.0-windows\ModelDoctor.AssemblyInfoInputs.cache
+F:\core\projects\github\revit-model-doctor\src\ModelDoctor\obj\Release\net8.0-windows\ModelDoctor.AssemblyInfo.cs
+F:\core\projects\github\revit-model-doctor\src\ModelDoctor\obj\Release\net8.0-windows\ModelDoctor.csproj.CoreCompileInputs.cache
+F:\core\projects\github\revit-model-doctor\src\ModelDoctor\obj\Release\net8.0-windows\ModelDoctor.sourcelink.json

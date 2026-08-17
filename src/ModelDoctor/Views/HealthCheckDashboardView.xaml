@@ -1,0 +1,206 @@
+<Window x:Class="ModelDoctor.Views.HealthCheckDashboardView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:converters="clr-namespace:ModelDoctor.Views.Converters"
+        mc:Ignorable="d"
+        Title="Model Doctor - Health Audit Dashboard" Height="680" Width="1050"
+        WindowStartupLocation="CenterScreen"
+        Background="#F8FAFC"
+        FontFamily="Segoe UI">
+
+    <Window.Resources>
+        <converters:StatusToColorConverter x:Key="StatusToColorConverter" />
+
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="#2563EB"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#1E222A" Padding="20,15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Model Doctor - Health Dashboard" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock Text="{Binding DocumentTitle, StringFormat='Document: {0}'}" FontSize="13" Foreground="#9CA3AF" Margin="0,4,0,0"/>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="{Binding AuditTime, StringFormat='Audit Date: {0}'}" FontSize="12" Foreground="#9CA3AF" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Content (2 Columns) -->
+        <Grid Grid.Row="1" Margin="15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3.2*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT COLUMN: Audit Rules (Top) & Specific Issue Explanation (Bottom) -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1.8*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="1.2*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Top: Audit Rules Summary DataGrid -->
+                <Border Grid.Row="0" Background="White" CornerRadius="8" BorderBrush="#E2E8F0" BorderThickness="1" Padding="10">
+                    <DockPanel>
+                        <TextBlock Text="Audit Rules Summary" FontSize="15" FontWeight="Bold" Foreground="#1E293B" DockPanel.Dock="Top" Margin="0,0,0,10"/>
+                        <DataGrid ItemsSource="{Binding RuleResults}" 
+                                  SelectedItem="{Binding SelectedRule}"
+                                  AutoGenerateColumns="False" 
+                                  IsReadOnly="True" 
+                                  GridLinesVisibility="Horizontal"
+                                  HorizontalGridLinesBrush="#F1F5F9"
+                                  HeadersVisibility="Column"
+                                  CanUserReorderColumns="False"
+                                  Background="Transparent"
+                                  BorderThickness="0"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="Status" Width="85">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{Binding Status, Converter={StaticResource StatusToColorConverter}}" 
+                                                    CornerRadius="12" Padding="8,3" HorizontalAlignment="Center">
+                                                <TextBlock Text="{Binding Status}" Foreground="White" FontWeight="Bold" FontSize="11"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="120" FontWeight="Medium"/>
+                                <DataGridTextColumn Header="Rule Name" Binding="{Binding RuleName}" Width="150" FontWeight="SemiBold"/>
+                                <DataGridTextColumn Header="Issues" Binding="{Binding Count}" Width="55"/>
+                                <DataGridTextColumn Header="Rule Overview" Binding="{Binding Description}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+
+                <GridSplitter Grid.Row="1" Height="10" Background="Transparent" VerticalAlignment="Center"/>
+
+                <!-- Bottom Left: Specific Issue Explanation Card -->
+                <Border Grid.Row="2" Background="White" CornerRadius="8" BorderBrush="#E2E8F0" BorderThickness="1" Padding="12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="Specific Element Issue Explanation" FontSize="14" FontWeight="Bold" Foreground="#1E293B" Margin="0,0,0,6"/>
+
+                        <Border Grid.Row="1" Background="#FEF2F2" BorderBrush="#FCA5A5" BorderThickness="1" CornerRadius="6" Padding="10">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding SelectedElement.ElementIdValue, StringFormat='Selected Element ID: {0}'}" 
+                                               FontWeight="Bold" Foreground="#991B1B" FontSize="12" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{Binding SelectedElement.IssueDescription}" 
+                                               Foreground="#7F1D1D" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <GridSplitter Grid.Column="1" Width="10" Background="Transparent" HorizontalAlignment="Center"/>
+
+            <!-- RIGHT COLUMN: Offending Elements ListBox & Action Button -->
+            <Border Grid.Column="2" Background="White" CornerRadius="8" BorderBrush="#E2E8F0" BorderThickness="1" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Offending Elements List" FontSize="15" FontWeight="Bold" Foreground="#1E293B" Margin="0,0,0,6"/>
+
+                    <StackPanel Grid.Row="1" Margin="0,0,0,8">
+                        <Border Background="#E0F2FE" CornerRadius="4" Padding="6,3" HorizontalAlignment="Left">
+                            <TextBlock Text="{Binding SelectedRule.Category, StringFormat='Category: {0}'}" FontSize="11" FontWeight="Bold" Foreground="#0369A1"/>
+                        </Border>
+                        <TextBlock Text="{Binding SelectedRule.RuleName, StringFormat='Rule: {0}'}" FontSize="13" FontWeight="SemiBold" Foreground="#334155" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+
+                    <!-- Element ID Selection List -->
+                    <Border Grid.Row="2" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="4" Margin="0,0,0,10">
+                        <ListBox ItemsSource="{Binding OffendingElements}" 
+                                 SelectedItem="{Binding SelectedElement}"
+                                 BorderThickness="0">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Margin="4">
+                                        <TextBlock Text="ElementId: " Foreground="#64748B" FontSize="12"/>
+                                        <TextBlock Text="{Binding ElementIdValue}" FontWeight="Bold" Foreground="#0F172A" FontSize="12"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+
+                    <!-- Action Button -->
+                    <StackPanel Grid.Row="3">
+                        <Button Content="Copy Selected Element ID" 
+                                Command="{Binding CopySelectedElementIdCommand}" 
+                                Background="#0EA5E9" 
+                                Foreground="White" 
+                                Height="34"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Footer / Copyright & Close Action Button -->
+        <Border Grid.Row="2" Background="#F1F5F9" Padding="15,10" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" 
+                           Text="Created by Arman Arisman | Copyright © 2026 Arman Arisman. All rights reserved." 
+                           Foreground="#64748B" 
+                           FontSize="12" 
+                           VerticalAlignment="Center" 
+                           FontWeight="Medium"/>
+                <Button Grid.Column="1" 
+                        Content="Close" 
+                        Command="{Binding CloseCommand}" 
+                        Background="#64748B" 
+                        Foreground="White"
+                        Width="90"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

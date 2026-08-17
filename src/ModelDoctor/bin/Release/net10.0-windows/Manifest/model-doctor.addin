@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>Model Doctor</Name>
+    <Assembly>ModelDoctor\ModelDoctor.dll</Assembly>
+    <FullClassName>ModelDoctor.App</FullClassName>
+    <ClientId>c6d5e1f0-4a8b-4c2d-9e3f-1a2b3c4d5e6f</ClientId>
+    <VendorId>ModelDoctor</VendorId>
+    <VendorDescription>Model Doctor - Modular Revit Model Health Audit Add-In</VendorDescription>
+  </AddIn>
+</RevitAddIns>
