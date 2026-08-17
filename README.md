@@ -2,8 +2,6 @@
 
 Model Doctor is a C# .NET 10 Revit Add-In that performs automated health check audits on Revit models and presents results via an interactive WPF Dashboard.
 
-Developed with AI assistance and tested on Autodesk Revit 2027.
-
 ---
 
 ## Key Features
