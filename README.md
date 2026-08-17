@@ -8,8 +8,9 @@ Model Doctor is a C# .NET 10 Revit Add-In that performs automated health check a
 
 - **Ribbon Integration**: Registers a "Model Doctor" panel under the default Revit Add-Ins tab.
 - **Modeless & Interactive Dashboard**: Operates non-modally via Revit `ExternalEvent` architecture—allowing modelers and BIM managers to freely navigate, edit, and click within Revit while keeping the audit dashboard open.
-- **Select & Show in Revit**: One-click element locator button and double-click interaction to highlight and zoom to any offending element directly in active Revit views.
-- **Categorized Audit Rules**:
+- **Select & Show in Revit**: One-click element locator button and double-click interaction to highlight and zoom to 3D/2D model elements, or automatically open and activate target Views directly in Revit.
+- **Persistent Element Ignore / Suppress System**: Suppress intentional design exceptions or false positives. Ignored element states are saved permanently inside the `.rvt` file via Revit **`ExtensibleStorage`**, persisting across user sessions and team members. Includes a "Show Ignored" toggle to inspect or restore suppressed items.
+- **Categorized Audit Engine**:
   - **Imports & Links**: Detects unlinked, directly imported CAD drawings (`.dwg`).
   - **Model Hygiene & Performance**:
     - **In-Place Families Check**: Identifies in-place family instances affecting file size and regeneration speed.
@@ -17,13 +18,7 @@ Model Doctor is a C# .NET 10 Revit Add-In that performs automated health check a
   - **Views & Sheets Health**:
     - **Unplaced Model Views Check**: Detects printable model views not assigned to any drawing sheet.
     - **Views Without View Template Check**: Flags views missing View Templates to maintain graphic standards.
-  - **Granular Warning Classifier**: Automatically categorizes native Revit warnings into specific sub-categories:
-    - *Warnings - Hosting* (Unhosted / Lost Host Elements)
-    - *Warnings - MEP Systems* (Unconnected Pipes, Ducts, Electrical Circuits)
-    - *Warnings - Geometry* (Overlapping & Duplicate Elements, Curtain Wall Issues)
-    - *Warnings - Rooms & Spaces* (Unenclosed / Redundant Rooms)
-    - *Warnings - Structural* (Structural & Analytical Misalignments)
-    - *Warnings - General* (Other Revit Model Warnings)
+  - **Native Revit Warnings Parity**: Groups native model warnings directly by Revit's exact failure message text (`FailureMessage.GetDescriptionText()`), featuring **intelligent title shortening** (concise 1-sentence titles in the DataGrid while preserving full multi-line advice in the issue detail card).
 - **Reporting & Export**: One-click Copy Element ID and full CSV Audit Report Export.
 
 ---
