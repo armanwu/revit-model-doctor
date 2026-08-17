@@ -17,9 +17,9 @@ namespace ModelDoctor.Views.Converters
             {
                 return status switch
                 {
-                    HealthStatus.Pass => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2ECC71")),
-                    HealthStatus.Warning => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F39C12")),
-                    HealthStatus.Fail => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E74C3C")),
+                    HealthStatus.Pass => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981")),
+                    HealthStatus.Warning => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B")),
+                    HealthStatus.Fail => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444")),
                     _ => new SolidColorBrush(Colors.Gray)
                 };
             }

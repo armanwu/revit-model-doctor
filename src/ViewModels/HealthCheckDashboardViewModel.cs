@@ -16,6 +16,7 @@ namespace ModelDoctor.ViewModels
 {
     /// <summary>
     /// ViewModel driving the interactive WPF Health Check Dashboard view.
+    /// Supports Category Ignoring, Rule Name Ignoring, Dynamic Overall Model QC Assessment, and Rule/Element Level Auditing.
     /// </summary>
     public class HealthCheckDashboardViewModel : INotifyPropertyChanged
     {
@@ -23,6 +24,20 @@ namespace ModelDoctor.ViewModels
         private OffendingElementInfo? _selectedElement;
 
         private bool _showIgnoredItems;
+        private bool _showIgnoredCategories = true;
+        private bool _isUpdatingResults;
+
+        private string _overallQcStatusText = "EVALUATING...";
+        private string _overallQcMessage = "Calculating model QC status...";
+        private string _overallQcColorHex = "#64748B";
+
+        private int _passedRulesCount;
+        private int _warningRulesCount;
+        private int _failedRulesCount;
+        private int _totalActiveIssuesCount;
+        private int _ignoredCategoriesCount;
+        private int _ignoredRulesCount;
+        private int _totalRulesCount;
 
         public UIDocument? UiDoc { get; }
         public ExternalEvent? SelectElementEvent { get; }
@@ -32,7 +47,10 @@ namespace ModelDoctor.ViewModels
 
         public string DocumentTitle { get; }
         public string AuditTime { get; }
+
+        public List<HealthRuleResult> AllRuleResults { get; }
         public ObservableCollection<HealthRuleResult> RuleResults { get; }
+        public ObservableCollection<CategoryFilterItem> CategoryFilters { get; }
 
         public bool ShowIgnoredItems
         {
@@ -47,11 +65,24 @@ namespace ModelDoctor.ViewModels
             }
         }
 
+        public bool ShowIgnoredCategories
+        {
+            get => _showIgnoredCategories;
+            set
+            {
+                if (SetProperty(ref _showIgnoredCategories, value))
+                {
+                    UpdateFilteredRuleResults();
+                }
+            }
+        }
+
         public HealthRuleResult? SelectedRule
         {
             get => _selectedRule;
             set
             {
+                if (_isUpdatingResults) return;
                 if (SetProperty(ref _selectedRule, value))
                 {
                     OnPropertyChanged(nameof(OffendingElements));
@@ -80,17 +111,82 @@ namespace ModelDoctor.ViewModels
             }
         }
 
+        // --- Overall QC Assessment Properties ---
+        public string OverallQcStatusText
+        {
+            get => _overallQcStatusText;
+            private set => SetProperty(ref _overallQcStatusText, value);
+        }
+
+        public string OverallQcMessage
+        {
+            get => _overallQcMessage;
+            private set => SetProperty(ref _overallQcMessage, value);
+        }
+
+        public string OverallQcColorHex
+        {
+            get => _overallQcColorHex;
+            private set => SetProperty(ref _overallQcColorHex, value);
+        }
+
+        public int PassedRulesCount
+        {
+            get => _passedRulesCount;
+            private set => SetProperty(ref _passedRulesCount, value);
+        }
+
+        public int WarningRulesCount
+        {
+            get => _warningRulesCount;
+            private set => SetProperty(ref _warningRulesCount, value);
+        }
+
+        public int FailedRulesCount
+        {
+            get => _failedRulesCount;
+            private set => SetProperty(ref _failedRulesCount, value);
+        }
+
+        public int TotalActiveIssuesCount
+        {
+            get => _totalActiveIssuesCount;
+            private set => SetProperty(ref _totalActiveIssuesCount, value);
+        }
+
+        public int IgnoredCategoriesCount
+        {
+            get => _ignoredCategoriesCount;
+            private set => SetProperty(ref _ignoredCategoriesCount, value);
+        }
+
+        public int IgnoredRulesCount
+        {
+            get => _ignoredRulesCount;
+            private set => SetProperty(ref _ignoredRulesCount, value);
+        }
+
+        public int TotalRulesCount
+        {
+            get => _totalRulesCount;
+            private set => SetProperty(ref _totalRulesCount, value);
+        }
+
+        // --- Commands ---
         public ICommand SelectAndShowElementCommand { get; }
         public ICommand IgnoreSelectedElementCommand { get; }
         public ICommand UnignoreSelectedElementCommand { get; }
         public ICommand CopySelectedElementIdCommand { get; }
         public ICommand ExportCsvCommand { get; }
         public ICommand CloseCommand { get; }
+        public ICommand ToggleAllCategoriesCommand { get; }
+        public ICommand ToggleSelectedRuleIgnoreCommand { get; }
+        public ICommand IncludeAllRulesCommand { get; }
 
         public Action? RequestClose { get; set; }
 
         public HealthCheckDashboardViewModel(
-            UIDocument? uiDoc, 
+            UIDocument? uiDoc,
             IEnumerable<HealthRuleResult> results,
             ExternalEvent? selectElementEvent = null,
             SelectElementHandler? selectElementHandler = null,
@@ -107,18 +203,210 @@ namespace ModelDoctor.ViewModels
 
             DocumentTitle = doc?.Title ?? "Unknown Document";
             AuditTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            RuleResults = new ObservableCollection<HealthRuleResult>(results ?? Enumerable.Empty<HealthRuleResult>());
 
-            SelectedRule = RuleResults.FirstOrDefault();
+            AllRuleResults = results?.ToList() ?? new List<HealthRuleResult>();
+            RuleResults = new ObservableCollection<HealthRuleResult>();
+            CategoryFilters = new ObservableCollection<CategoryFilterItem>();
+
+            foreach (var r in AllRuleResults)
+            {
+                r.OnIgnoreStateChanged = () => RecalculateCountsAndStatuses();
+            }
+
+            // Initialize distinct categories
+            var distinctCategories = AllRuleResults
+                .Select(r => r.Category)
+                .Distinct()
+                .OrderBy(c => c);
+
+            foreach (var catName in distinctCategories)
+            {
+                var catItem = new CategoryFilterItem
+                {
+                    CategoryName = catName,
+                    IsIgnored = false,
+                    OnIgnoredChanged = () => RecalculateCountsAndStatuses()
+                };
+                CategoryFilters.Add(catItem);
+            }
 
             SelectAndShowElementCommand = new RelayCommand(ExecuteSelectAndShowElement, _ => SelectedElement != null);
             IgnoreSelectedElementCommand = new RelayCommand(ExecuteIgnoreSelectedElement, _ => SelectedElement != null && !SelectedElement.IsIgnored);
             UnignoreSelectedElementCommand = new RelayCommand(ExecuteUnignoreSelectedElement, _ => SelectedElement != null && SelectedElement.IsIgnored);
             CopySelectedElementIdCommand = new RelayCommand(ExecuteCopySelectedElementId, _ => SelectedElement != null);
-            ExportCsvCommand = new RelayCommand(ExecuteExportCsv, _ => RuleResults != null && RuleResults.Count > 0);
+            ExportCsvCommand = new RelayCommand(ExecuteExportCsv, _ => AllRuleResults != null && AllRuleResults.Count > 0);
             CloseCommand = new RelayCommand(_ => RequestClose?.Invoke());
+            ToggleAllCategoriesCommand = new RelayCommand(ExecuteToggleAllCategories);
+            ToggleSelectedRuleIgnoreCommand = new RelayCommand(ExecuteToggleSelectedRuleIgnore, _ => SelectedRule != null);
+            IncludeAllRulesCommand = new RelayCommand(ExecuteIncludeAllRules);
 
             RecalculateCountsAndStatuses();
+        }
+
+        private void ExecuteToggleAllCategories(object? parameter)
+        {
+            bool hasIncluded = CategoryFilters.Any(c => c.IsIncluded);
+            bool targetState = hasIncluded; // if has included, disable all
+
+            foreach (var cat in CategoryFilters)
+            {
+                cat.IsIgnored = targetState;
+            }
+            RecalculateCountsAndStatuses();
+        }
+
+        private void ExecuteToggleSelectedRuleIgnore(object? parameter)
+        {
+            if (SelectedRule != null)
+            {
+                SelectedRule.IsRuleIgnored = !SelectedRule.IsRuleIgnored;
+            }
+        }
+
+        private void ExecuteIncludeAllRules(object? parameter)
+        {
+            foreach (var r in AllRuleResults)
+            {
+                r.IsRuleIgnored = false;
+            }
+            foreach (var cat in CategoryFilters)
+            {
+                cat.IsIgnored = false;
+            }
+            RecalculateCountsAndStatuses();
+        }
+
+        public void RecalculateCountsAndStatuses()
+        {
+            // 1. Recalculate active counts and status per rule based on element ignores
+            foreach (var rule in AllRuleResults)
+            {
+                if (rule.OffendingElements != null)
+                {
+                    int activeCount = rule.OffendingElements.Count(e => !e.IsIgnored);
+                    rule.Count = activeCount;
+                    if (activeCount == 0)
+                        rule.Status = HealthStatus.Pass;
+                    else if (activeCount < 15)
+                        rule.Status = HealthStatus.Warning;
+                    else
+                        rule.Status = HealthStatus.Fail;
+                }
+            }
+
+            // 2. Identify ignored vs active categories
+            var ignoredCatNames = CategoryFilters
+                .Where(c => c.IsIgnored)
+                .Select(c => c.CategoryName)
+                .ToHashSet();
+
+            IgnoredCategoriesCount = ignoredCatNames.Count;
+            TotalRulesCount = AllRuleResults.Count;
+
+            // 3. Mark rule objects with IsCategoryIgnored
+            foreach (var rule in AllRuleResults)
+            {
+                rule.IsCategoryIgnored = ignoredCatNames.Contains(rule.Category);
+            }
+
+            IgnoredRulesCount = AllRuleResults.Count(r => r.IsRuleIgnored);
+
+            // 4. Update category summary metrics
+            foreach (var cat in CategoryFilters)
+            {
+                var catRules = AllRuleResults.Where(r => r.Category == cat.CategoryName).ToList();
+                cat.RuleCount = catRules.Count;
+                cat.ActiveIssueCount = catRules.Where(r => !r.IsEffectivelyIgnored).Sum(r => r.Count);
+                if (catRules.Any(r => r.Status == HealthStatus.Fail && !r.IsEffectivelyIgnored))
+                    cat.Status = HealthStatus.Fail;
+                else if (catRules.Any(r => r.Status == HealthStatus.Warning && !r.IsEffectivelyIgnored))
+                    cat.Status = HealthStatus.Warning;
+                else
+                    cat.Status = HealthStatus.Pass;
+            }
+
+            // 5. Evaluate Overall Model QC Assessment on ACTIVE (NON-EFFECTIVELY IGNORED) rules ONLY
+            var activeRules = AllRuleResults.Where(r => !r.IsEffectivelyIgnored).ToList();
+
+            TotalActiveIssuesCount = activeRules.Sum(r => r.Count);
+            FailedRulesCount = activeRules.Count(r => r.Status == HealthStatus.Fail);
+            WarningRulesCount = activeRules.Count(r => r.Status == HealthStatus.Warning);
+            PassedRulesCount = activeRules.Count(r => r.Status == HealthStatus.Pass);
+
+            if (AllRuleResults.Count > 0 && activeRules.Count == 0)
+            {
+                OverallQcStatusText = "ALL RULES IGNORED";
+                OverallQcMessage = "All audit rules are currently ignored. Enable at least one rule or category to evaluate model Quality Control.";
+                OverallQcColorHex = "#64748B"; // Gray
+            }
+            else if (FailedRulesCount > 0)
+            {
+                OverallQcStatusText = "FAILED QC";
+                OverallQcMessage = $"Model FAILED Quality Control. Detected {FailedRulesCount} FAIL rule(s) and {TotalActiveIssuesCount} active issue(s) in active rules. Immediate resolution required.";
+                OverallQcColorHex = "#EF4444"; // Red
+            }
+            else if (WarningRulesCount > 0)
+            {
+                OverallQcStatusText = "PASSED WITH WARNINGS";
+                OverallQcMessage = $"Model PASSED Quality Control WITH WARNINGS. No critical failures detected, but {WarningRulesCount} warning rule(s) with {TotalActiveIssuesCount} minor issue(s) require attention.";
+                OverallQcColorHex = "#F59E0B"; // Orange
+            }
+            else
+            {
+                OverallQcStatusText = "PASSED QC";
+                OverallQcMessage = "Model PASSED Quality Control! All evaluated rules in active categories meet health standards with 0 active issues. Ready for submission.";
+                OverallQcColorHex = "#10B981"; // Vibrant Green
+            }
+
+            UpdateFilteredRuleResults();
+        }
+
+        private void UpdateFilteredRuleResults()
+        {
+            _isUpdatingResults = true;
+
+            try
+            {
+                var prevRule = _selectedRule;
+                var prevElem = _selectedElement;
+
+                RuleResults.Clear();
+                var visibleRules = ShowIgnoredCategories
+                    ? AllRuleResults
+                    : AllRuleResults.Where(r => !r.IsEffectivelyIgnored);
+
+                foreach (var r in visibleRules)
+                {
+                    RuleResults.Add(r);
+                }
+
+                if (prevRule != null && RuleResults.Contains(prevRule))
+                {
+                    _selectedRule = prevRule;
+                }
+                else
+                {
+                    _selectedRule = RuleResults.FirstOrDefault();
+                }
+                OnPropertyChanged(nameof(SelectedRule));
+
+                OnPropertyChanged(nameof(OffendingElements));
+
+                var currentOffendingList = OffendingElements.ToList();
+                if (prevElem != null && currentOffendingList.Contains(prevElem))
+                {
+                    _selectedElement = prevElem;
+                }
+                else
+                {
+                    _selectedElement = currentOffendingList.FirstOrDefault();
+                }
+                OnPropertyChanged(nameof(SelectedElement));
+            }
+            finally
+            {
+                _isUpdatingResults = false;
+            }
         }
 
         private void ExecuteSelectAndShowElement(object? parameter)
@@ -192,25 +480,6 @@ namespace ModelDoctor.ViewModels
             RecalculateCountsAndStatuses();
         }
 
-        public void RecalculateCountsAndStatuses()
-        {
-            foreach (var rule in RuleResults)
-            {
-                if (rule.OffendingElements != null)
-                {
-                    int activeCount = rule.OffendingElements.Count(e => !e.IsIgnored);
-                    rule.Count = activeCount;
-                    if (activeCount == 0)
-                        rule.Status = HealthStatus.Pass;
-                    else if (activeCount < 15)
-                        rule.Status = HealthStatus.Warning;
-                    else
-                        rule.Status = HealthStatus.Fail;
-                }
-            }
-            OnPropertyChanged(nameof(OffendingElements));
-        }
-
         private void ExecuteCopySelectedElementId(object? parameter)
         {
             if (SelectedElement != null)
@@ -235,20 +504,28 @@ namespace ModelDoctor.ViewModels
                 if (dialog.ShowDialog() == true)
                 {
                     var sb = new StringBuilder();
-                    sb.AppendLine("Category,Rule Name,Status,Total Issues,Element ID,Issue Description");
+                    sb.AppendLine("Overall QC Status: " + OverallQcStatusText);
+                    sb.AppendLine("Audit Date: " + AuditTime);
+                    sb.AppendLine("Document: " + DocumentTitle);
+                    sb.AppendLine();
+                    sb.AppendLine("Category,Category Ignored?,Rule Name,Rule Ignored?,Status,Total Issues,Element ID,Element Ignored?,Issue Description");
 
-                    foreach (var rule in RuleResults)
+                    foreach (var rule in AllRuleResults)
                     {
+                        string catIgnoredStr = rule.IsCategoryIgnored ? "YES" : "NO";
+                        string ruleIgnoredStr = rule.IsRuleIgnored ? "YES" : "NO";
+
                         if (rule.OffendingElements != null && rule.OffendingElements.Count > 0)
                         {
                             foreach (var elem in rule.OffendingElements)
                             {
-                                sb.AppendLine($"{EscapeCsv(rule.Category)},{EscapeCsv(rule.RuleName)},{EscapeCsv(rule.Status.ToString())},{rule.Count},{EscapeCsv(elem.ElementIdValue)},{EscapeCsv(elem.IssueDescription)}");
+                                string elemIgnoredStr = elem.IsIgnored ? "YES" : "NO";
+                                sb.AppendLine($"{EscapeCsv(rule.Category)},{catIgnoredStr},{EscapeCsv(rule.RuleName)},{ruleIgnoredStr},{EscapeCsv(rule.Status.ToString())},{rule.Count},{EscapeCsv(elem.ElementIdValue)},{elemIgnoredStr},{EscapeCsv(elem.IssueDescription)}");
                             }
                         }
                         else
                         {
-                            sb.AppendLine($"{EscapeCsv(rule.Category)},{EscapeCsv(rule.RuleName)},{EscapeCsv(rule.Status.ToString())},{rule.Count},N/A,{EscapeCsv(rule.Description)}");
+                            sb.AppendLine($"{EscapeCsv(rule.Category)},{catIgnoredStr},{EscapeCsv(rule.RuleName)},{ruleIgnoredStr},{EscapeCsv(rule.Status.ToString())},{rule.Count},N/A,NO,{EscapeCsv(rule.Description)}");
                         }
                     }
 

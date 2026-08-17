@@ -5,17 +5,18 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:converters="clr-namespace:ModelDoctor.Views.Converters"
         mc:Ignorable="d"
-        Title="Model Doctor - Health Audit Dashboard" Height="680" Width="1050"
+        Title="Model Doctor - Health Audit Dashboard &amp; QC Rating" Height="780" Width="1160"
         WindowStartupLocation="CenterScreen"
         Background="#F8FAFC"
         FontFamily="Segoe UI">
 
     <Window.Resources>
         <converters:StatusToColorConverter x:Key="StatusToColorConverter" />
+        <converters:HexToBrushConverter x:Key="HexToBrushConverter" />
 
         <Style TargetType="Button">
-            <Setter Property="Padding" Value="14,8"/>
-            <Setter Property="Margin" Value="4"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Margin" Value="3"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Background" Value="#2563EB"/>
@@ -40,77 +41,288 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <Border Grid.Row="0" Background="#1E222A" Padding="20,15">
+        <!-- Header + OVERALL MODEL QC ASSESSMENT BANNER -->
+        <Border Grid.Row="0" Background="#1E222A" Padding="20,14">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="Model Doctor - Health Dashboard" FontSize="20" FontWeight="Bold" Foreground="White"/>
-                    <TextBlock Text="{Binding DocumentTitle, StringFormat='Document: {0}'}" FontSize="13" Foreground="#9CA3AF" Margin="0,4,0,0"/>
-                </StackPanel>
-                <TextBlock Grid.Column="1" Text="{Binding AuditTime, StringFormat='Audit Date: {0}'}" FontSize="12" Foreground="#9CA3AF" VerticalAlignment="Center"/>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Document Info Row -->
+                <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Model Doctor - Health Audit Dashboard" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock Text="{Binding DocumentTitle, StringFormat='Document: {0}'}" FontSize="13" Foreground="#9CA3AF" Margin="0,2,0,0"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{Binding AuditTime, StringFormat='Audit Date: {0}'}" FontSize="12" Foreground="#9CA3AF" VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- OVERALL MODEL QC ASSESSMENT CARD -->
+                <Border Grid.Row="1" Background="#0F172A" CornerRadius="8" BorderBrush="#334155" BorderThickness="1" Padding="14,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- QC Status Badge -->
+                        <Border Grid.Column="0" 
+                                Background="{Binding OverallQcColorHex, Converter={StaticResource HexToBrushConverter}}" 
+                                CornerRadius="8" Padding="14,8" VerticalAlignment="Center" Margin="0,0,14,0">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="OVERALL QC ASSESSMENT" FontSize="10" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Opacity="0.9"/>
+                                <TextBlock Text="{Binding OverallQcStatusText}" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- QC Narrative + Statistical Summary Pills -->
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding OverallQcMessage}" FontSize="12" Foreground="#F1F5F9" TextWrapping="Wrap" FontWeight="Medium"/>
+                            
+                            <!-- Metric Pills -->
+                            <WrapPanel Margin="0,8,0,0">
+                                <Border Background="#10B981" CornerRadius="10" Padding="8,2" Margin="0,0,6,4">
+                                    <TextBlock Text="{Binding PassedRulesCount, StringFormat='🟢 Pass Rules: {0}'}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                </Border>
+                                <Border Background="#F59E0B" CornerRadius="10" Padding="8,2" Margin="0,0,6,4">
+                                    <TextBlock Text="{Binding WarningRulesCount, StringFormat='🟡 Warning Rules: {0}'}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                </Border>
+                                <Border Background="#EF4444" CornerRadius="10" Padding="8,2" Margin="0,0,6,4">
+                                    <TextBlock Text="{Binding FailedRulesCount, StringFormat='🔴 Fail Rules: {0}'}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                </Border>
+                                <Border Background="#2563EB" CornerRadius="10" Padding="8,2" Margin="0,0,6,4">
+                                    <TextBlock Text="{Binding TotalActiveIssuesCount, StringFormat='🔵 Active Issues: {0}'}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                </Border>
+                                <Border Background="#64748B" CornerRadius="10" Padding="8,2" Margin="0,0,6,4">
+                                    <TextBlock Text="{Binding IgnoredCategoriesCount, StringFormat='⚪ Ignored Categories: {0}'}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                </Border>
+                                <Border Background="#475569" CornerRadius="10" Padding="8,2" Margin="0,0,6,4">
+                                    <TextBlock Text="{Binding IgnoredRulesCount, StringFormat='⚪ Ignored Rules: {0}'}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                </Border>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
             </Grid>
         </Border>
 
         <!-- Main Content (2 Columns) -->
-        <Grid Grid.Row="1" Margin="15">
+        <Grid Grid.Row="1" Margin="14">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3.2*"/>
+                <ColumnDefinition Width="3.4*"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="2*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- LEFT COLUMN: Audit Rules (Top) & Specific Issue Explanation (Bottom) -->
+            <!-- LEFT COLUMN: Legenda, Category Filter, Audit Rules Summary & Issue Detail -->
             <Grid Grid.Column="0">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="1.8*"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="1.2*"/>
+                    <RowDefinition Height="Auto"/> <!-- Legenda Panel -->
+                    <RowDefinition Height="Auto"/> <!-- Category Ignore / Filter Panel -->
+                    <RowDefinition Height="1.8*"/> <!-- Audit Rules Summary DataGrid -->
+                    <RowDefinition Height="Auto"/> <!-- Splitter -->
+                    <RowDefinition Height="1.2*"/> <!-- Issue Detail -->
                 </Grid.RowDefinitions>
 
-                <!-- Top: Audit Rules Summary DataGrid -->
-                <Border Grid.Row="0" Background="White" CornerRadius="8" BorderBrush="#E2E8F0" BorderThickness="1" Padding="10">
-                    <DockPanel>
-                        <TextBlock Text="Audit Rules Summary" FontSize="15" FontWeight="Bold" Foreground="#1E293B" DockPanel.Dock="Top" Margin="0,0,0,10"/>
-                        <DataGrid ItemsSource="{Binding RuleResults}" 
+                <!-- 1. AUDIT STATUS LEGEND -->
+                <Border Grid.Row="0" Background="#F0F9FF" CornerRadius="6" BorderBrush="#BAE6FD" BorderThickness="1" Padding="10,8" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="AUDIT STATUS LEGEND:" FontSize="11" FontWeight="Bold" Foreground="#0369A1" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <WrapPanel Grid.Column="1" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Margin="0,2,14,2">
+                                <Border Background="#10B981" CornerRadius="10" Padding="6,2" Margin="0,0,4,0">
+                                    <TextBlock Text="PASS" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                </Border>
+                                <TextBlock Text="Zero issues detected (0 count). Fully compliant with quality standard." FontSize="11" Foreground="#0F172A" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,2,14,2">
+                                <Border Background="#F59E0B" CornerRadius="10" Padding="6,2" Margin="0,0,4,0">
+                                    <TextBlock Text="WARNING" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                </Border>
+                                <TextBlock Text="Minor issues (1-14 count). Recommended for model cleanup." FontSize="11" Foreground="#0F172A" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                                <Border Background="#EF4444" CornerRadius="10" Padding="6,2" Margin="0,0,4,0">
+                                    <TextBlock Text="FAIL" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                </Border>
+                                <TextBlock Text="Critical threshold exceeded (≥15 count). Immediate fix required." FontSize="11" Foreground="#0F172A" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </WrapPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 2. CATEGORY IGNORE / FILTER PANEL -->
+                <Border Grid.Row="1" Background="White" CornerRadius="6" BorderBrush="#E2E8F0" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Header controls -->
+                        <DockPanel Grid.Row="0" Margin="0,0,0,6">
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                <CheckBox Content="Show Ignored Category/Rule Items" 
+                                          IsChecked="{Binding ShowIgnoredCategories}" 
+                                          VerticalAlignment="Center" 
+                                          FontSize="11" Foreground="#64748B" FontWeight="Medium" Margin="0,0,10,0"/>
+                                <Button Content="Include All Rules &amp; Categories" 
+                                        Command="{Binding IncludeAllRulesCommand}" 
+                                        Background="#059669" Height="26" Padding="8,2" FontSize="11" Margin="0,0,4,0"/>
+                                <Button Content="Toggle Categories" 
+                                        Command="{Binding ToggleAllCategoriesCommand}" 
+                                        Background="#64748B" Height="26" Padding="8,2" FontSize="11"/>
+                            </StackPanel>
+                            <TextBlock Text="Category &amp; Rule Filter (Uncheck to ignore from QC):" 
+                                       FontSize="12" FontWeight="Bold" Foreground="#1E293B" VerticalAlignment="Center"/>
+                        </DockPanel>
+
+                        <!-- Category Checkbox List -->
+                        <ItemsControl Grid.Row="1" ItemsSource="{Binding CategoryFilters}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6" Padding="8,4" Margin="0,0,8,6">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <CheckBox IsChecked="{Binding IsIncluded}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                            <TextBlock Text="{Binding CategoryName}" FontWeight="SemiBold" FontSize="11" Foreground="#1E293B" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding ActiveIssueCount, StringFormat=' ({0} issues)'}" FontSize="11" Foreground="#64748B" VerticalAlignment="Center"/>
+                                            
+                                            <!-- Ignored Tag Badge if unchecked -->
+                                            <Border Margin="6,0,0,0" Padding="4,1" CornerRadius="3" Background="#FEF2F2" BorderBrush="#FCA5A5" BorderThickness="1">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsIgnored}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="IGNORED" Foreground="#DC2626" FontSize="9" FontWeight="Bold"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Border>
+
+                <!-- 3. AUDIT RULES SUMMARY DATAGRID -->
+                <Border Grid.Row="2" Background="White" CornerRadius="8" BorderBrush="#E2E8F0" BorderThickness="1" Padding="10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                            <Button Content="Toggle Selected Rule Ignore" 
+                                    Command="{Binding ToggleSelectedRuleIgnoreCommand}" 
+                                    DockPanel.Dock="Right" 
+                                    Background="#D97706" 
+                                    Height="26" 
+                                    Padding="10,2" 
+                                    FontSize="11"/>
+                            <TextBlock Text="Audit Rules Summary (Uncheck QC column or click Toggle to ignore specific Rule Name):" 
+                                       FontSize="13" FontWeight="Bold" Foreground="#1E293B" VerticalAlignment="Center"/>
+                        </DockPanel>
+
+                        <DataGrid Grid.Row="1" 
+                                  ItemsSource="{Binding RuleResults}" 
                                   SelectedItem="{Binding SelectedRule}"
                                   AutoGenerateColumns="False" 
-                                  IsReadOnly="True" 
+                                  IsReadOnly="False" 
                                   GridLinesVisibility="Horizontal"
                                   HorizontalGridLinesBrush="#F1F5F9"
                                   HeadersVisibility="Column"
                                   CanUserReorderColumns="False"
                                   Background="Transparent"
                                   BorderThickness="0"
-                                  RowHeight="36">
+                                  RowHeight="34">
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="Status" Width="85">
+                                <!-- QC Active Checkbox Column for Rule Name Ignoring -->
+                                <DataGridTemplateColumn Header="QC" Width="40">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Border Background="{Binding Status, Converter={StaticResource StatusToColorConverter}}" 
-                                                    CornerRadius="12" Padding="8,3" HorizontalAlignment="Center">
-                                                <TextBlock Text="{Binding Status}" Foreground="White" FontWeight="Bold" FontSize="11"/>
-                                            </Border>
+                                            <CheckBox IsChecked="{Binding IsRuleIncluded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                                      HorizontalAlignment="Center" 
+                                                      VerticalAlignment="Center"
+                                                      ToolTip="Check to include rule in QC; uncheck to ignore rule."/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="120" FontWeight="Medium"/>
-                                <DataGridTextColumn Header="Rule Name" Binding="{Binding RuleName}" Width="150" FontWeight="SemiBold"/>
-                                <DataGridTextColumn Header="Issues" Binding="{Binding Count}" Width="55"/>
-                                <DataGridTextColumn Header="Rule Overview" Binding="{Binding Description}" Width="*"/>
+                                <!-- Status Badge -->
+                                <DataGridTemplateColumn Header="Status" Width="95">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid HorizontalAlignment="Center">
+                                                <!-- Ignored Badge -->
+                                                <Border Background="#64748B" CornerRadius="12" Padding="8,3" HorizontalAlignment="Center">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsEffectivelyIgnored}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="IGNORED" Foreground="White" FontWeight="Bold" FontSize="10"/>
+                                                </Border>
+
+                                                <!-- Active Status Badge -->
+                                                <Border Background="{Binding Status, Converter={StaticResource StatusToColorConverter}}" 
+                                                        CornerRadius="12" Padding="8,3" HorizontalAlignment="Center">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsEffectivelyIgnored}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding Status}" Foreground="White" FontWeight="Bold" FontSize="11"/>
+                                                </Border>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="120" FontWeight="Medium" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Rule Name" Binding="{Binding RuleName}" Width="170" FontWeight="SemiBold" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Issues" Binding="{Binding Count}" Width="55" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Rule Overview" Binding="{Binding Description}" Width="*" IsReadOnly="True"/>
                             </DataGrid.Columns>
                         </DataGrid>
-                    </DockPanel>
+                    </Grid>
                 </Border>
 
-                <GridSplitter Grid.Row="1" Height="10" Background="Transparent" VerticalAlignment="Center"/>
+                <GridSplitter Grid.Row="3" Height="8" Background="Transparent" VerticalAlignment="Center"/>
 
-                <!-- Bottom Left: Specific Issue Explanation Card -->
-                <Border Grid.Row="2" Background="White" CornerRadius="8" BorderBrush="#E2E8F0" BorderThickness="1" Padding="12">
+                <!-- 4. SPECIFIC ELEMENT ISSUE EXPLANATION CARD -->
+                <Border Grid.Row="4" Background="White" CornerRadius="8" BorderBrush="#E2E8F0" BorderThickness="1" Padding="12">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -134,7 +346,7 @@
 
             <GridSplitter Grid.Column="1" Width="10" Background="Transparent" HorizontalAlignment="Center"/>
 
-            <!-- RIGHT COLUMN: Offending Elements ListBox & Action Button -->
+            <!-- RIGHT COLUMN: Offending Elements ListBox & Action Buttons -->
             <Border Grid.Column="2" Background="White" CornerRadius="8" BorderBrush="#E2E8F0" BorderThickness="1" Padding="12">
                 <Grid>
                     <Grid.RowDefinitions>
