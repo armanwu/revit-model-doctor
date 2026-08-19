@@ -17,8 +17,9 @@ Model Doctor is a C# .NET 10 Revit Add-In that performs automated health check a
 2. **Run**: In Revit 2027, open the **Add-Ins** ribbon tab and click **Run Health Check**.
 3. **Uninstall**: Run `Uninstall.bat`.
 
-## Copyright
+## License
+
+This project is licensed under the [MIT License](LICENSE).
 
 Created by Arman Arisman.  
-Developed with AI assistance.  
-Copyright (c) 2026 Arman Arisman. All rights reserved.
+Copyright (c) 2026 Arman Arisman.
