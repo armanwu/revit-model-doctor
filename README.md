@@ -21,5 +21,4 @@ Model Doctor is a C# .NET 10 Revit Add-In that performs automated health check a
 
 This project is licensed under the [MIT License](LICENSE).
 
-Created by Arman Arisman.  
 Copyright (c) 2026 Arman Arisman.
