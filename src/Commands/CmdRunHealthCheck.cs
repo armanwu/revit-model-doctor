@@ -102,13 +102,18 @@ namespace ModelDoctor.Commands
                 var ignoreHandler = new IgnoreElementHandler();
                 var ignoreEvent = ExternalEvent.Create(ignoreHandler);
 
+                var quickFixHandler = new QuickFixHandler();
+                var quickFixEvent = ExternalEvent.Create(quickFixHandler);
+
                 var viewModel = new HealthCheckDashboardViewModel(
                     uiDoc, 
                     results, 
                     selectEvent, 
                     selectHandler,
                     ignoreEvent,
-                    ignoreHandler);
+                    ignoreHandler,
+                    quickFixEvent,
+                    quickFixHandler);
 
                 var view = new HealthCheckDashboardView(viewModel);
 

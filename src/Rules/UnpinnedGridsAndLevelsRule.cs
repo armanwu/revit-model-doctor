@@ -10,10 +10,35 @@ namespace ModelDoctor.Rules
     /// Health rule to detect unpinned datum references (Grids, Levels) and Revit Link instances.
     /// Industry Thresholds: Pass = 100% Pinned, Warning = 90%-99% Pinned, Fail < 90% Pinned.
     /// </summary>
-    public class UnpinnedGridsAndLevelsRule : IHealthCheckRule
+    public class UnpinnedGridsAndLevelsRule : IHealthCheckRule, IQuickFixableRule
     {
         /// <inheritdoc />
         public string Name => "Unpinned Grids & Levels";
+
+        /// <inheritdoc />
+        public string QuickFixDescription => "Pins all unpinned Grids, Levels, and Revit Links to prevent accidental displacement.";
+
+        /// <inheritdoc />
+        public int ExecuteQuickFix(Document doc, IEnumerable<OffendingElementInfo> offendingElements)
+        {
+            ArgumentNullException.ThrowIfNull(doc);
+            ArgumentNullException.ThrowIfNull(offendingElements);
+
+            int count = 0;
+            foreach (var item in offendingElements)
+            {
+                if (item.ElementId != null && item.ElementId != ElementId.InvalidElementId)
+                {
+                    Element elem = doc.GetElement(item.ElementId);
+                    if (elem != null && !elem.Pinned)
+                    {
+                        elem.Pinned = true;
+                        count++;
+                    }
+                }
+            }
+            return count;
+        }
 
         /// <inheritdoc />
         public IEnumerable<HealthRuleResult> Execute(Document doc)
@@ -83,7 +108,9 @@ namespace ModelDoctor.Rules
                     Status = status,
                     Count = unpinnedCount,
                     OffendingElements = offendingList,
-                    StatusEvaluator = elems => EvaluateStatus(elems.Count())
+                    StatusEvaluator = elems => EvaluateStatus(elems.Count()),
+                    QuickFixRule = this,
+                    RuleSource = this
                 }
             };
         }

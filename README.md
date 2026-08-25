@@ -16,6 +16,7 @@
 
 - **Overall Health Score & Status Banner**: Dynamic overall health score calculation (0% - 100%) and status classification (*🟢 HEALTHY*, *🟡 NEEDS ATTENTION*, *🔴 CRITICAL*).
 - **3-Category Classification Engine**: Categorizes audit rules into **Model Performance**, **Data & Deliverable Integrity**, and **Spatial & Model Safety**.
+- **⚡ Safe 1-Click Quick Fix (Auto-Remediation)**: Automate rule remediation (e.g. pin unpinned Grids/Levels/Links, purge unused View Filters/Templates) directly from the modeless WPF dashboard with full Revit `Ctrl + Z` undo safety.
 - **Interactive Health & Scoring Guide**: Click **❓ Help & Scoring Guide** in the dashboard header to view industry metric thresholds and category definitions.
 - **Industry Standard Metric Thresholds**: Implements strict BIM quality control thresholds for warnings, CAD imports, in-place families, purge items, rooms, view extents, and coordinate placement.
 - **Interactive Element Selection & View Navigation**: Double-click or click **Select Element** in the modeless dashboard to zoom, isolate, and highlight offending elements directly in active Revit views.

@@ -10,10 +10,38 @@ namespace ModelDoctor.Rules
     /// Health rule to detect unused View Filters and unapplied View Templates in the document.
     /// Industry Thresholds: Pass &lt;= 5, Warning 6-20, Fail &gt; 20.
     /// </summary>
-    public class UnusedViewFiltersAndTemplatesRule : IHealthCheckRule
+    public class UnusedViewFiltersAndTemplatesRule : IHealthCheckRule, IQuickFixableRule
     {
         /// <inheritdoc />
         public string Name => "Unused View Filters & Templates";
+
+        /// <inheritdoc />
+        public string QuickFixDescription => "Purges unused View Filters and unassigned View Templates from the document.";
+
+        /// <inheritdoc />
+        public int ExecuteQuickFix(Document doc, IEnumerable<OffendingElementInfo> offendingElements)
+        {
+            ArgumentNullException.ThrowIfNull(doc);
+            ArgumentNullException.ThrowIfNull(offendingElements);
+
+            int count = 0;
+            foreach (var item in offendingElements)
+            {
+                if (item.ElementId != null && item.ElementId != ElementId.InvalidElementId)
+                {
+                    try
+                    {
+                        doc.Delete(item.ElementId);
+                        count++;
+                    }
+                    catch
+                    {
+                        // Skip if element cannot be deleted
+                    }
+                }
+            }
+            return count;
+        }
 
         /// <inheritdoc />
         public IEnumerable<HealthRuleResult> Execute(Document doc)
@@ -97,7 +125,9 @@ namespace ModelDoctor.Rules
                     Status = status,
                     Count = count,
                     OffendingElements = offendingList,
-                    StatusEvaluator = elems => EvaluateStatus(elems.Count())
+                    StatusEvaluator = elems => EvaluateStatus(elems.Count()),
+                    QuickFixRule = this,
+                    RuleSource = this
                 }
             };
         }

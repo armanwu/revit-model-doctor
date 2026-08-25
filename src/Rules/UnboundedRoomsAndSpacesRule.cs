@@ -10,10 +10,38 @@ namespace ModelDoctor.Rules
     /// Health rule to detect Unplaced, Not Enclosed, or Redundant (Zero Area) Rooms and Spaces.
     /// Industry Thresholds: Pass = 0, Warning = 1-5, Fail &gt; 5.
     /// </summary>
-    public class UnboundedRoomsAndSpacesRule : IHealthCheckRule
+    public class UnboundedRoomsAndSpacesRule : IHealthCheckRule, IQuickFixableRule
     {
         /// <inheritdoc />
         public string Name => "Unplaced & Unenclosed Rooms";
+
+        /// <inheritdoc />
+        public string QuickFixDescription => "Deletes unplaced, unenclosed, or redundant zero-area Room/Space elements from the project database.";
+
+        /// <inheritdoc />
+        public int ExecuteQuickFix(Document doc, IEnumerable<OffendingElementInfo> offendingElements)
+        {
+            ArgumentNullException.ThrowIfNull(doc);
+            ArgumentNullException.ThrowIfNull(offendingElements);
+
+            int count = 0;
+            foreach (var item in offendingElements)
+            {
+                if (item.ElementId != null && item.ElementId != ElementId.InvalidElementId)
+                {
+                    try
+                    {
+                        doc.Delete(item.ElementId);
+                        count++;
+                    }
+                    catch
+                    {
+                        // Skip if element cannot be deleted
+                    }
+                }
+            }
+            return count;
+        }
 
         /// <inheritdoc />
         public IEnumerable<HealthRuleResult> Execute(Document doc)
@@ -72,7 +100,9 @@ namespace ModelDoctor.Rules
                     Status = status,
                     Count = count,
                     OffendingElements = offendingList,
-                    StatusEvaluator = elems => EvaluateStatus(elems.Count())
+                    StatusEvaluator = elems => EvaluateStatus(elems.Count()),
+                    QuickFixRule = this,
+                    RuleSource = this
                 }
             };
         }

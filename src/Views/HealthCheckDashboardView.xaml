@@ -294,6 +294,36 @@
                                 <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="120" FontWeight="Medium" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Rule Name" Binding="{Binding RuleName}" Width="170" FontWeight="SemiBold" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Issues" Binding="{Binding Count}" Width="55" IsReadOnly="True"/>
+
+                                <!-- Quick Fix Button Column -->
+                                <DataGridTemplateColumn Header="Auto Fix" Width="95">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="⚡ Quick Fix" 
+                                                    Command="{Binding DataContext.ExecuteQuickFixCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="#D97706" 
+                                                    Foreground="White"
+                                                    FontSize="10" 
+                                                    FontWeight="Bold"
+                                                    Padding="6,2"
+                                                    Height="24"
+                                                    ToolTip="{Binding QuickFixDescription}">
+                                                <Button.Style>
+                                                    <Style TargetType="Button">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding CanQuickFix}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
                                 <DataGridTextColumn Header="Rule Overview" Binding="{Binding Description}" Width="*" IsReadOnly="True"/>
                             </DataGrid.Columns>
                         </DataGrid>
@@ -388,6 +418,25 @@
 
                     <!-- Action Buttons -->
                     <StackPanel Grid.Row="3">
+                        <Button Content="⚡ Quick Fix Selected Rule" 
+                                Command="{Binding ExecuteQuickFixCommand}" 
+                                CommandParameter="{Binding SelectedRule}"
+                                Background="#D97706" 
+                                Foreground="White" 
+                                Height="34"
+                                Margin="0,0,0,4"
+                                ToolTip="{Binding SelectedRule.QuickFixDescription}">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedRule.CanQuickFix}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                         <Button Content="Select &amp; Show in Revit" 
                                 Command="{Binding SelectAndShowElementCommand}" 
                                 Background="#2563EB" 

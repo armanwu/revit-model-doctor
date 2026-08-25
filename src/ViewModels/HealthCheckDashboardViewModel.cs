@@ -45,6 +45,8 @@ namespace ModelDoctor.ViewModels
         public SelectElementHandler? SelectElementHandler { get; }
         public ExternalEvent? IgnoreElementEvent { get; }
         public IgnoreElementHandler? IgnoreElementHandler { get; }
+        public ExternalEvent? QuickFixEvent { get; }
+        public QuickFixHandler? QuickFixHandler { get; }
 
         public string DocumentTitle { get; }
         public string AuditTime { get; }
@@ -190,6 +192,7 @@ namespace ModelDoctor.ViewModels
         public ICommand ToggleSelectedRuleIgnoreCommand { get; }
         public ICommand IncludeAllRulesCommand { get; }
         public ICommand OpenHelpCommand { get; }
+        public ICommand ExecuteQuickFixCommand { get; }
 
         public Action? RequestClose { get; set; }
 
@@ -199,13 +202,17 @@ namespace ModelDoctor.ViewModels
             ExternalEvent? selectElementEvent = null,
             SelectElementHandler? selectElementHandler = null,
             ExternalEvent? ignoreElementEvent = null,
-            IgnoreElementHandler? ignoreElementHandler = null)
+            IgnoreElementHandler? ignoreElementHandler = null,
+            ExternalEvent? quickFixEvent = null,
+            QuickFixHandler? quickFixHandler = null)
         {
             UiDoc = uiDoc;
             SelectElementEvent = selectElementEvent;
             SelectElementHandler = selectElementHandler;
             IgnoreElementEvent = ignoreElementEvent;
             IgnoreElementHandler = ignoreElementHandler;
+            QuickFixEvent = quickFixEvent;
+            QuickFixHandler = quickFixHandler;
 
             Document? doc = uiDoc?.Document;
 
@@ -248,8 +255,50 @@ namespace ModelDoctor.ViewModels
             ToggleSelectedRuleIgnoreCommand = new RelayCommand(ExecuteToggleSelectedRuleIgnore, _ => SelectedRule != null);
             IncludeAllRulesCommand = new RelayCommand(ExecuteIncludeAllRules);
             OpenHelpCommand = new RelayCommand(ExecuteOpenHelp);
+            ExecuteQuickFixCommand = new RelayCommand(ExecuteQuickFix, CanExecuteQuickFix);
 
             RecalculateCountsAndStatuses();
+        }
+
+        private bool CanExecuteQuickFix(object? parameter)
+        {
+            var targetRule = (parameter as HealthRuleResult) ?? SelectedRule;
+            return targetRule != null && targetRule.IsQuickFixable && targetRule.Count > 0 && !targetRule.IsEffectivelyIgnored;
+        }
+
+        private void ExecuteQuickFix(object? parameter)
+        {
+            var ruleToFix = (parameter as HealthRuleResult) ?? SelectedRule;
+            if (ruleToFix == null || !ruleToFix.IsQuickFixable || ruleToFix.QuickFixRule == null)
+                return;
+
+            var activeElements = ruleToFix.OffendingElements.Where(e => !e.IsIgnored).ToList();
+            if (activeElements.Count == 0)
+            {
+                MessageBox.Show($"Rule '{ruleToFix.RuleName}' has no active offending elements to remediate.", "Model Doctor Quick Fix", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var confirmResult = MessageBox.Show(
+                $"⚡ MODEL DOCTOR QUICK FIX CONFIRMATION\n\nRule: '{ruleToFix.RuleName}'\nAction: {ruleToFix.QuickFixDescription}\nItem Count: {activeElements.Count} element(s)\n\nAre you sure you want to proceed with this automated fix?\n(Note: You can press Ctrl + Z in Revit if you need to undo).",
+                "Model Doctor Quick Fix",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (confirmResult != MessageBoxResult.Yes)
+                return;
+
+            if (QuickFixHandler != null && QuickFixEvent != null)
+            {
+                QuickFixHandler.TargetRule = ruleToFix;
+                QuickFixHandler.FixableRule = ruleToFix.QuickFixRule;
+                QuickFixHandler.OnCompleted = () => RecalculateCountsAndStatuses();
+                QuickFixEvent.Raise();
+            }
+            else
+            {
+                MessageBox.Show("Quick Fix handler is not connected.", "Model Doctor Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         private void ExecuteToggleAllCategories(object? parameter)

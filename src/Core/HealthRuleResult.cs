@@ -18,6 +18,43 @@ namespace ModelDoctor.Core
         private int _count;
         private bool _isCategoryIgnored;
         private bool _isRuleIgnored;
+        private IQuickFixableRule? _quickFixRule;
+
+        /// <summary>
+        /// Optional reference to quick fix rule implementation.
+        /// </summary>
+        public IQuickFixableRule? QuickFixRule
+        {
+            get => _quickFixRule;
+            set
+            {
+                if (SetProperty(ref _quickFixRule, value))
+                {
+                    OnPropertyChanged(nameof(IsQuickFixable));
+                    OnPropertyChanged(nameof(QuickFixDescription));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Reference to the rule instance that generated this result, used for live re-evaluations after Quick Fix.
+        /// </summary>
+        public IHealthCheckRule? RuleSource { get; set; }
+
+        /// <summary>
+        /// Indicates whether this rule supports safe 1-click Quick Fix remediation.
+        /// </summary>
+        public bool IsQuickFixable => QuickFixRule != null;
+
+        /// <summary>
+        /// Indicates whether Quick Fix is currently active and available for this rule (has active issues to fix).
+        /// </summary>
+        public bool CanQuickFix => IsQuickFixable && !IsEffectivelyIgnored && Count > 0;
+
+        /// <summary>
+        /// Human-readable explanation of what the Quick Fix will execute.
+        /// </summary>
+        public string QuickFixDescription => QuickFixRule?.QuickFixDescription ?? string.Empty;
 
         /// <summary>
         /// The display name of the rule evaluated.
@@ -52,7 +89,13 @@ namespace ModelDoctor.Core
         public HealthStatus Status
         {
             get => _status;
-            set => SetProperty(ref _status, value);
+            set
+            {
+                if (SetProperty(ref _status, value))
+                {
+                    OnPropertyChanged(nameof(CanQuickFix));
+                }
+            }
         }
 
         /// <summary>
@@ -61,7 +104,13 @@ namespace ModelDoctor.Core
         public int Count
         {
             get => _count;
-            set => SetProperty(ref _count, value);
+            set
+            {
+                if (SetProperty(ref _count, value))
+                {
+                    OnPropertyChanged(nameof(CanQuickFix));
+                }
+            }
         }
 
         /// <summary>
@@ -76,6 +125,7 @@ namespace ModelDoctor.Core
                 {
                     OnPropertyChanged(nameof(IsEffectivelyIgnored));
                     OnPropertyChanged(nameof(IsRuleIncluded));
+                    OnPropertyChanged(nameof(CanQuickFix));
                     OnIgnoreStateChanged?.Invoke();
                 }
             }
@@ -93,6 +143,7 @@ namespace ModelDoctor.Core
                 {
                     OnPropertyChanged(nameof(IsEffectivelyIgnored));
                     OnPropertyChanged(nameof(IsRuleIncluded));
+                    OnPropertyChanged(nameof(CanQuickFix));
                     OnIgnoreStateChanged?.Invoke();
                 }
             }
