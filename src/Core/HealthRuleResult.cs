@@ -118,6 +118,11 @@ namespace ModelDoctor.Core
         public Action? OnIgnoreStateChanged { get; set; }
 
         /// <summary>
+        /// Optional delegate evaluator used to dynamically recalculate rule status when elements are ignored or unignored.
+        /// </summary>
+        public Func<IEnumerable<OffendingElementInfo>, HealthStatus>? StatusEvaluator { get; set; }
+
+        /// <summary>
         /// Collection of offending elements along with their specific error/warning details.
         /// </summary>
         public ICollection<OffendingElementInfo> OffendingElements { get; set; } = new List<OffendingElementInfo>();

@@ -30,6 +30,7 @@ namespace ModelDoctor.ViewModels
         private string _overallQcStatusText = "EVALUATING...";
         private string _overallQcMessage = "Calculating model QC status...";
         private string _overallQcColorHex = "#64748B";
+        private int _overallHealthScore = 100;
 
         private int _passedRulesCount;
         private int _warningRulesCount;
@@ -130,6 +131,12 @@ namespace ModelDoctor.ViewModels
             private set => SetProperty(ref _overallQcColorHex, value);
         }
 
+        public int OverallHealthScore
+        {
+            get => _overallHealthScore;
+            private set => SetProperty(ref _overallHealthScore, value);
+        }
+
         public int PassedRulesCount
         {
             get => _passedRulesCount;
@@ -182,6 +189,7 @@ namespace ModelDoctor.ViewModels
         public ICommand ToggleAllCategoriesCommand { get; }
         public ICommand ToggleSelectedRuleIgnoreCommand { get; }
         public ICommand IncludeAllRulesCommand { get; }
+        public ICommand OpenHelpCommand { get; }
 
         public Action? RequestClose { get; set; }
 
@@ -239,6 +247,7 @@ namespace ModelDoctor.ViewModels
             ToggleAllCategoriesCommand = new RelayCommand(ExecuteToggleAllCategories);
             ToggleSelectedRuleIgnoreCommand = new RelayCommand(ExecuteToggleSelectedRuleIgnore, _ => SelectedRule != null);
             IncludeAllRulesCommand = new RelayCommand(ExecuteIncludeAllRules);
+            OpenHelpCommand = new RelayCommand(ExecuteOpenHelp);
 
             RecalculateCountsAndStatuses();
         }
@@ -276,6 +285,41 @@ namespace ModelDoctor.ViewModels
             RecalculateCountsAndStatuses();
         }
 
+        private void ExecuteOpenHelp(object? parameter)
+        {
+            try
+            {
+                var helpView = new ModelDoctor.Views.HelpView();
+
+                try
+                {
+                    var activeWpfWindow = System.Windows.Application.Current?.Windows
+                        .OfType<System.Windows.Window>()
+                        .FirstOrDefault(w => w.IsVisible && w is ModelDoctor.Views.HealthCheckDashboardView);
+
+                    if (activeWpfWindow != null)
+                    {
+                        helpView.Owner = activeWpfWindow;
+                    }
+                    else if (UiDoc?.Application?.MainWindowHandle != null && UiDoc.Application.MainWindowHandle != IntPtr.Zero)
+                    {
+                        var helper = new System.Windows.Interop.WindowInteropHelper(helpView);
+                        helper.Owner = UiDoc.Application.MainWindowHandle;
+                    }
+                }
+                catch
+                {
+                    helpView.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen;
+                }
+
+                helpView.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Failed to open Help Guide: {ex.Message}", "Model Doctor Help Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+
         public void RecalculateCountsAndStatuses()
         {
             // 1. Recalculate active counts and status per rule based on element ignores
@@ -283,14 +327,13 @@ namespace ModelDoctor.ViewModels
             {
                 if (rule.OffendingElements != null)
                 {
-                    int activeCount = rule.OffendingElements.Count(e => !e.IsIgnored);
-                    rule.Count = activeCount;
-                    if (activeCount == 0)
-                        rule.Status = HealthStatus.Pass;
-                    else if (activeCount < 15)
-                        rule.Status = HealthStatus.Warning;
-                    else
-                        rule.Status = HealthStatus.Fail;
+                    var activeElements = rule.OffendingElements.Where(e => !e.IsIgnored).ToList();
+                    rule.Count = activeElements.Count;
+
+                    if (rule.StatusEvaluator != null)
+                    {
+                        rule.Status = rule.StatusEvaluator(activeElements);
+                    }
                 }
             }
 
@@ -333,29 +376,43 @@ namespace ModelDoctor.ViewModels
             WarningRulesCount = activeRules.Count(r => r.Status == HealthStatus.Warning);
             PassedRulesCount = activeRules.Count(r => r.Status == HealthStatus.Pass);
 
+            double totalScore = 0.0;
+            foreach (var r in activeRules)
+            {
+                if (r.Status == HealthStatus.Pass)
+                    totalScore += 100.0;
+                else if (r.Status == HealthStatus.Warning)
+                    totalScore += 70.0;
+                else
+                    totalScore += 0.0;
+            }
+
+            int scorePercent = activeRules.Count > 0 ? (int)Math.Round(totalScore / activeRules.Count) : 0;
+            OverallHealthScore = scorePercent;
+
             if (AllRuleResults.Count > 0 && activeRules.Count == 0)
             {
                 OverallQcStatusText = "ALL RULES IGNORED";
                 OverallQcMessage = "All audit rules are currently ignored. Enable at least one rule or category to evaluate model Quality Control.";
                 OverallQcColorHex = "#64748B"; // Gray
             }
-            else if (FailedRulesCount > 0)
+            else if (scorePercent >= 85)
             {
-                OverallQcStatusText = "FAILED QC";
-                OverallQcMessage = $"Model FAILED Quality Control. Detected {FailedRulesCount} FAIL rule(s) and {TotalActiveIssuesCount} active issue(s) in active rules. Immediate resolution required.";
-                OverallQcColorHex = "#EF4444"; // Red
+                OverallQcStatusText = $"PASS / HEALTHY ({scorePercent}%)";
+                OverallQcMessage = $"Model is HEALTHY & PASS (Overall Score: {scorePercent}%). Model is clean, performance optimal, ready for coordination and deliverables.";
+                OverallQcColorHex = "#10B981"; // Green
             }
-            else if (WarningRulesCount > 0)
+            else if (scorePercent >= 65)
             {
-                OverallQcStatusText = "PASSED WITH WARNINGS";
-                OverallQcMessage = $"Model PASSED Quality Control WITH WARNINGS. No critical failures detected, but {WarningRulesCount} warning rule(s) with {TotalActiveIssuesCount} minor issue(s) require attention.";
-                OverallQcColorHex = "#F59E0B"; // Orange
+                OverallQcStatusText = $"WARNING / NEEDS ATTENTION ({scorePercent}%)";
+                OverallQcMessage = $"Model HAS WARNINGS / NEEDS ATTENTION (Overall Score: {scorePercent}%). Model runs smoothly, but periodic cleanup is required before issues expand.";
+                OverallQcColorHex = "#F59E0B"; // Warning Orange
             }
             else
             {
-                OverallQcStatusText = "PASSED QC";
-                OverallQcMessage = "Model PASSED Quality Control! All evaluated rules in active categories meet health standards with 0 active issues. Ready for submission.";
-                OverallQcColorHex = "#10B981"; // Vibrant Green
+                OverallQcStatusText = $"FAIL / CRITICAL ({scorePercent}%)";
+                OverallQcMessage = $"Model FAILED / CRITICAL STATE (Overall Score: {scorePercent}%). High risk of model sluggishness, file corruption, or inaccurate quantity schedules. Immediate fix required!";
+                OverallQcColorHex = "#EF4444"; // Red
             }
 
             UpdateFilteredRuleResults();

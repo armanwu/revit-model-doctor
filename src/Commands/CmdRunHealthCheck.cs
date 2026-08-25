@@ -29,15 +29,29 @@ namespace ModelDoctor.Commands
                 return Result.Failed;
             }
 
-            // Register modular rules to execute
+            // Register modular rules structured into 3 refined English categories
             var rules = new List<IHealthCheckRule>
             {
+                // 1. Model Performance
+                new WarningCountRule(),
                 new CadImportRule(),
                 new InPlaceFamilyRule(),
-                new UnpinnedElementsRule(),
+                new PurgeableElementsRule(),
+                new UnusedViewFiltersAndTemplatesRule(),
+
+                // 2. Data & Deliverable Integrity
+                new UnboundedRoomsAndSpacesRule(),
                 new UnplacedViewsRule(),
-                new ViewTemplateRule(),
-                new WarningCountRule()
+                new UnusedSchedulesAndLegendsRule(),
+                new RevitLinksAndIfcStatusRule(),
+                new DuplicateElementsRule(),
+                new ModelGroupDuplicationRule(),
+                new WorksetAllocationRule(),
+
+                // 3. Spatial & Model Safety
+                new SurveyAndBasePointDistanceRule(),
+                new UnpinnedGridsAndLevelsRule(),
+                new ViewClippingAndExtentsRule()
             };
 
             var results = new List<HealthRuleResult>();

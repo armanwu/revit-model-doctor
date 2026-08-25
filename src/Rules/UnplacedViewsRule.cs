@@ -7,19 +7,19 @@ using ModelDoctor.Core;
 namespace ModelDoctor.Rules
 {
     /// <summary>
-    /// Health rule to detect printable model views that are not placed on any sheet.
+    /// Health rule to detect printable working model views that are not placed on any drawing sheet.
+    /// Industry Thresholds: Pass &lt; 20% of total views, Warning 20%-40%, Fail &gt; 40%.
     /// </summary>
     public class UnplacedViewsRule : IHealthCheckRule
     {
         /// <inheritdoc />
-        public string Name => "Unplaced Model Views";
+        public string Name => "Views Not on Sheets";
 
         /// <inheritdoc />
         public IEnumerable<HealthRuleResult> Execute(Document doc)
         {
             ArgumentNullException.ThrowIfNull(doc);
 
-            // Collect all viewports to get placed View IDs
             var placedViewIds = new HashSet<ElementId>(
                 new FilteredElementCollector(doc)
                     .OfClass(typeof(Viewport))
@@ -27,7 +27,6 @@ namespace ModelDoctor.Rules
                     .Select(vp => vp.ViewId)
             );
 
-            // Also include schedule sheet instances
             var placedScheduleIds = new FilteredElementCollector(doc)
                 .OfClass(typeof(ScheduleSheetInstance))
                 .Cast<ScheduleSheetInstance>()
@@ -38,8 +37,7 @@ namespace ModelDoctor.Rules
                 placedViewIds.Add(id);
             }
 
-            // Collect printable model views
-            var unplacedViews = new FilteredElementCollector(doc)
+            var allPrintableViews = new FilteredElementCollector(doc)
                 .OfClass(typeof(View))
                 .Cast<View>()
                 .Where(v => !v.IsTemplate && v.CanBePrinted &&
@@ -47,32 +45,47 @@ namespace ModelDoctor.Rules
                             v.ViewType != ViewType.ProjectBrowser &&
                             v.ViewType != ViewType.SystemBrowser &&
                             v.ViewType != ViewType.DrawingSheet &&
-                            !placedViewIds.Contains(v.Id))
+                            v.ViewType != ViewType.Schedule &&
+                            v.ViewType != ViewType.Legend)
                 .ToList();
+
+            var unplacedViews = allPrintableViews.Where(v => !placedViewIds.Contains(v.Id)).ToList();
 
             var offendingList = unplacedViews
                 .Select(v => new OffendingElementInfo
                 {
                     ElementId = v.Id,
-                    IssueDescription = $"Unplaced View: '{v.Name}' (Type: {v.ViewType}, ID: {v.Id.Value}). This view is not placed on any drawing sheet. Unplaced views clutter the Project Browser and increase file size."
+                    IssueDescription = $"View Not on Sheet: '{v.Name}' (Type: {v.ViewType}, ID: {v.Id.Value}). Working or temporary view not placed on any sheet."
                 })
                 .ToList();
 
+            int totalViewCount = allPrintableViews.Count;
             int count = offendingList.Count;
-            HealthStatus status = count == 0 ? HealthStatus.Pass : (count < 15 ? HealthStatus.Warning : HealthStatus.Fail);
+
+            HealthStatus EvaluateStatus(int unplacedCnt)
+            {
+                double unplacedPct = totalViewCount > 0 ? ((double)unplacedCnt / totalViewCount) * 100.0 : 0.0;
+                if (unplacedPct < 20.0) return HealthStatus.Pass;
+                if (unplacedPct <= 40.0) return HealthStatus.Warning;
+                return HealthStatus.Fail;
+            }
+
+            HealthStatus status = EvaluateStatus(count);
+            double unplacedPercentage = totalViewCount > 0 ? ((double)count / totalViewCount) * 100.0 : 0.0;
 
             return new[]
             {
                 new HealthRuleResult
                 {
                     RuleName = Name,
-                    Category = "Views & Sheets",
+                    Category = "Data & Deliverable Integrity",
                     Description = count == 0
                         ? "All printable model views are placed on drawing sheets."
-                        : $"Found {count} unplaced model view(s). Select an Element ID to view details or locate in Revit.",
+                        : $"Found {count} of {totalViewCount} model view(s) ({Math.Round(unplacedPercentage, 1)}%) not placed on sheets. Industry Standard: Pass < 20%, Warning 20%-40%, Fail > 40%.",
                     Status = status,
                     Count = count,
-                    OffendingElements = offendingList
+                    OffendingElements = offendingList,
+                    StatusEvaluator = elems => EvaluateStatus(elems.Count())
                 }
             };
         }

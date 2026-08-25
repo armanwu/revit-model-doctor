@@ -1,32 +1,57 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 
 :: ===================================================
-:: Model Doctor Revit Add-In Uninstaller
+:: Model Doctor Revit Add-In Multi-Version Uninstaller
 :: Created by: Arman Arisman
-:: Copyright (c) 2026 Arman Arisman. All rights reserved.
+:: Copyright (c) 2026 Arman Arisman
+:: License: MIT License (https://opensource.org/licenses/MIT)
 :: ===================================================
 
-set "REVIT_VERSION=2027"
-set "TARGET_DIR=%APPDATA%\Autodesk\Revit\Addins\%REVIT_VERSION%"
-
 echo ===================================================
-echo   Uninstalling Model Doctor Revit Add-In (%REVIT_VERSION%)
+echo   Model Doctor Revit Add-In Uninstaller
 echo   Created by: Arman Arisman
-echo   Copyright (c) 2026 Arman Arisman
+echo   License: MIT License (Open Source Software)
 echo ===================================================
+echo.
+echo Select target Revit version to uninstall Model Doctor:
+echo   [1] Revit 2025
+echo   [2] Revit 2026
+echo   [3] Revit 2027
+echo   [4] Uninstall from ALL versions (2025, 2026, 2027)
+echo   [5] Cancel
+echo.
+set /p CHOICE="Enter option [1-5]: "
 
-if exist "%TARGET_DIR%\model-doctor.addin" (
-    del /F /Q "%TARGET_DIR%\model-doctor.addin"
-    echo Removed model-doctor.addin
+if "%CHOICE%"=="1" set "VERSIONS=2025"
+if "%CHOICE%"=="2" set "VERSIONS=2026"
+if "%CHOICE%"=="3" set "VERSIONS=2027"
+if "%CHOICE%"=="4" set "VERSIONS=2025 2026 2027"
+if "%CHOICE%"=="5" exit /b 0
+if "%VERSIONS%"=="" (
+    echo Invalid choice. Uninstallation cancelled.
+    pause
+    exit /b 1
 )
 
-if exist "%TARGET_DIR%\ModelDoctor" (
-    rmdir /S /Q "%TARGET_DIR%\ModelDoctor"
-    echo Removed ModelDoctor folder
+echo.
+for %%V in (%VERSIONS%) do (
+    set "TARGET_DIR=%APPDATA%\Autodesk\Revit\Addins\%%V"
+    
+    if exist "!TARGET_DIR!\model-doctor.addin" (
+        del /F /Q "!TARGET_DIR!\model-doctor.addin"
+        echo Removed model-doctor.addin for Revit %%V
+    )
+
+    if exist "!TARGET_DIR!\ModelDoctor" (
+        rmdir /S /Q "!TARGET_DIR!\ModelDoctor"
+        echo Removed ModelDoctor folder for Revit %%V
+    )
 )
 
+echo.
 echo ===================================================
 echo [SUCCESS] Model Doctor Add-In uninstalled successfully!
+echo Target Version(s): %VERSIONS%
 echo ===================================================
 pause

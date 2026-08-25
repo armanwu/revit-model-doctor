@@ -7,128 +7,66 @@ using ModelDoctor.Core;
 namespace ModelDoctor.Rules
 {
     /// <summary>
-    /// Health rule to evaluate native Revit model warnings grouped by native warning message descriptions.
+    /// Health rule to inspect active Revit warnings count in the document.
+    /// Industry Thresholds: Pass &lt;= 50, Warning 51-200, Fail &gt; 200.
     /// </summary>
     public class WarningCountRule : IHealthCheckRule
     {
         /// <inheritdoc />
-        public string Name => "Model Warnings Check";
+        public string Name => "Active Warnings";
 
         /// <inheritdoc />
         public IEnumerable<HealthRuleResult> Execute(Document doc)
         {
             ArgumentNullException.ThrowIfNull(doc);
 
-            // Retrieve all warning messages from the document
             IList<FailureMessage> warnings = doc.GetWarnings();
+            var offendingList = new List<OffendingElementInfo>();
 
-            if (warnings.Count == 0)
+            foreach (var warning in warnings)
             {
-                return new[]
-                {
-                    new HealthRuleResult
-                    {
-                        RuleName = "No Model Warnings",
-                        Category = "Revit Warnings",
-                        Description = "No warnings present in the model.",
-                        Status = HealthStatus.Pass,
-                        Count = 0,
-                        OffendingElements = new List<OffendingElementInfo>()
-                    }
-                };
-            }
+                string desc = warning.GetDescriptionText();
+                var failingIds = warning.GetFailingElements();
 
-            // Group native warnings by exact description text
-            var groupedWarnings = new Dictionary<string, List<OffendingElementInfo>>();
-
-            foreach (var w in warnings)
-            {
-                string warningText = w.GetDescriptionText();
-                if (string.IsNullOrWhiteSpace(warningText))
-                {
-                    warningText = "General Revit Warning";
-                }
-
-                if (!groupedWarnings.TryGetValue(warningText, out var list))
-                {
-                    list = new List<OffendingElementInfo>();
-                    groupedWarnings[warningText] = list;
-                }
-
-                var failingIds = w.GetFailingElements();
                 if (failingIds != null && failingIds.Count > 0)
                 {
                     foreach (var id in failingIds)
                     {
-                        list.Add(new OffendingElementInfo
+                        offendingList.Add(new OffendingElementInfo
                         {
                             ElementId = id,
-                            IssueDescription = warningText
+                            IssueDescription = $"Warning: '{desc}' (Failing Element ID: {id.Value})"
                         });
                     }
                 }
-                else
-                {
-                    list.Add(new OffendingElementInfo
-                    {
-                        ElementId = ElementId.InvalidElementId,
-                        IssueDescription = warningText
-                    });
-                }
             }
 
-            var results = new List<HealthRuleResult>();
+            int warningCount = warnings.Count;
 
-            foreach (var kvp in groupedWarnings)
+            HealthStatus EvaluateStatus(int count)
             {
-                string fullDescription = kvp.Key;
-                string shortTitle = ShortenWarningTitle(fullDescription);
-                int count = kvp.Value.Count;
-                HealthStatus status = count < 15 ? HealthStatus.Warning : HealthStatus.Fail;
+                if (count <= 50) return HealthStatus.Pass;
+                if (count <= 200) return HealthStatus.Warning;
+                return HealthStatus.Fail;
+            }
 
-                results.Add(new HealthRuleResult
+            HealthStatus status = EvaluateStatus(warningCount);
+
+            return new[]
+            {
+                new HealthRuleResult
                 {
-                    RuleName = shortTitle,
-                    Category = "Revit Warnings",
-                    Description = fullDescription,
+                    RuleName = Name,
+                    Category = "Model Performance",
+                    Description = warningCount == 0
+                        ? "No warnings present in the model."
+                        : $"Found {warningCount} active warning(s). Industry Standard: Pass <= 50, Warning 51-200, Fail > 200.",
                     Status = status,
-                    Count = count,
-                    OffendingElements = kvp.Value
-                });
-            }
-
-            return results;
-        }
-
-        private static string ShortenWarningTitle(string fullText)
-        {
-            if (string.IsNullOrWhiteSpace(fullText))
-                return "General Revit Warning";
-
-            string text = fullText.Trim();
-
-            // Extract first sentence if period exists
-            int periodIdx = text.IndexOf('.');
-            if (periodIdx > 10)
-            {
-                text = text.Substring(0, periodIdx).Trim();
-            }
-
-            // Truncate cleanly at word boundary if > 60 chars
-            if (text.Length > 60)
-            {
-                int spaceIdx = text.LastIndexOf(' ', 57);
-                if (spaceIdx > 15)
-                {
-                    text = text.Substring(0, spaceIdx) + "...";
+                    Count = warningCount,
+                    OffendingElements = offendingList,
+                    StatusEvaluator = _ => EvaluateStatus(warnings.Count)
                 }
-                else
-                {
-                    text = text.Substring(0, 57) + "...";
-                }
-            }
-
-            return text;
+            };
         }
     }
 }
