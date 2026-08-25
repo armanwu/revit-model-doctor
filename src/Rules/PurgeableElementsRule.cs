@@ -25,18 +25,54 @@ namespace ModelDoctor.Rules
             ArgumentNullException.ThrowIfNull(offendingElements);
 
             int count = 0;
+            var processedIds = new HashSet<ElementId>();
+
             foreach (var item in offendingElements)
             {
-                if (item.ElementId != null && item.ElementId != ElementId.InvalidElementId)
+                if (item.ElementId == null || item.ElementId == ElementId.InvalidElementId || processedIds.Contains(item.ElementId))
+                    continue;
+
+                Element elem = doc.GetElement(item.ElementId);
+                if (elem == null) continue;
+
+                try
                 {
+                    // Attempt 1: Try deleting the individual symbol
+                    ICollection<ElementId> deleted = doc.Delete(item.ElementId);
+                    if (deleted != null && deleted.Count > 0)
+                    {
+                        foreach (var id in deleted) processedIds.Add(id);
+                        count++;
+                    }
+                    else if (elem is FamilySymbol symbol && symbol.Family != null && !processedIds.Contains(symbol.Family.Id))
+                    {
+                        // Attempt 2: If deleting symbol returned 0, try deleting parent Family
+                        ICollection<ElementId> famDeleted = doc.Delete(symbol.Family.Id);
+                        if (famDeleted != null && famDeleted.Count > 0)
+                        {
+                            foreach (var id in famDeleted) processedIds.Add(id);
+                            count++;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Attempt 3: Catch exception (e.g. deleting last symbol of a family) and try deleting parent Family
                     try
                     {
-                        doc.Delete(item.ElementId);
-                        count++;
+                        if (elem is FamilySymbol symbol && symbol.Family != null && !processedIds.Contains(symbol.Family.Id))
+                        {
+                            ICollection<ElementId> famDeleted = doc.Delete(symbol.Family.Id);
+                            if (famDeleted != null && famDeleted.Count > 0)
+                            {
+                                foreach (var id in famDeleted) processedIds.Add(id);
+                                count++;
+                            }
+                        }
                     }
                     catch
                     {
-                        // Skip element if it cannot be deleted
+                        // System locked element
                     }
                 }
             }
@@ -63,7 +99,7 @@ namespace ModelDoctor.Rules
             );
 
             var unusedSymbols = allSymbols
-                .Where(s => s.Family != null && !s.Family.IsInPlace && !placedSymbolIds.Contains(s.Id))
+                .Where(s => s.Family != null && !s.Family.IsInPlace && s.Family.IsEditable && !placedSymbolIds.Contains(s.Id))
                 .ToList();
 
             foreach (var s in unusedSymbols)
