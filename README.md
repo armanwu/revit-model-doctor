@@ -1,14 +1,15 @@
 # Revit Model Doctor
 
-**Revit Model Doctor** is an automated Quality Control (QC) and Model Health Audit engine for **Autodesk Revit 2025 and above** (tested and verified on **Revit 2027**). Built with C# .NET 10, it features an interactive, modeless WPF dashboard designed to monitor database hygiene, documentation accuracy, and spatial coordinate safety in real-time.
+**Revit Model Doctor** is an automated Quality Control (QC) and Model Health Audit engine for **Autodesk Revit 2025, 2026, and 2027**. Built with C# .NET 8 (modern runtime), it features an interactive, modeless WPF dashboard designed to monitor database hygiene, documentation accuracy, and spatial coordinate safety in real-time.
 
 ---
 
 ## 💻 System Compatibility
 
-- **Supported Revit Versions**: Autodesk Revit 2025, 2026, 2027+ (Requires .NET 8 / .NET 10 modern runtime).
-- **Multi-Version Installer**: Choose target Revit version interactively (`Revit 2025`, `Revit 2026`, `Revit 2027`, or `ALL`).
-- **Tested & Verified Environment**: **Autodesk Revit 2027**.
+- **Supported Revit Versions**: **Autodesk Revit 2025, 2026, and 2027**.
+- **Zero-Dependency Plug & Play**: **No .NET SDK, Visual Studio, or developer tools required** for end users. The add-in utilizes pre-compiled binaries and Revit's native runtime.
+- **Interactive Multi-Version Installer**: Choose target Revit version interactively (`Revit 2025`, `Revit 2026`, `Revit 2027`, or `ALL`).
+- **Tested & Verified Environments**: Autodesk Revit 2025, 2026, and 2027 on Windows 10/11.
 
 ---
 
@@ -77,23 +78,25 @@ The dashboard computes an **Overall Model Health Score** percentage based on eva
 
 ## 🚀 Quick Start & Installation
 
-### Installation
+### Zero-Dependency Installation (For Non-Developers & End-Users)
 1. Close Autodesk Revit.
-2. Run `Install.bat`.
-3. Choose your target Revit version from the menu:
+2. Double-click **`Install.bat`** in the root folder.
+3. Select your target Revit version from the interactive menu:
    - `[1]` Revit 2025
    - `[2]` Revit 2026
    - `[3]` Revit 2027
    - `[4]` Install for ALL versions (2025, 2026, 2027)
+4. *Done!* No .NET SDK, Visual Studio, or extra installation is required.
 
-### Running in Revit
-1. Open Revit (2025, 2026, or 2027) and load your project model.
+### Running in Autodesk Revit
+1. Launch Autodesk Revit (2025, 2026, or 2027) and open any project file (`.rvt`).
 2. Navigate to the **Add-Ins** ribbon tab.
-3. Click **Run Health Check** in the Model Doctor panel to launch the Modeless Dashboard.
+3. Click **Run Health Check** in the Model Doctor panel to open the Modeless Dashboard.
 
-### Uninstallation
-1. Run `Uninstall.bat`.
-2. Select target version (`[1] 2025`, `[2] 2026`, `[3] 2027`, or `[4] ALL`).
+### Clean 1-Click Uninstallation
+1. Close Autodesk Revit.
+2. Double-click **`Uninstall.bat`**.
+3. Select target version (`[1] 2025`, `[2] 2026`, `[3] 2027`, or `[4] ALL`).
 
 ---
 

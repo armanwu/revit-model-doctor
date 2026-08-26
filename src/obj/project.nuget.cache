@@ -1,8 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "l96ioY1hzTg=",
+  "dgSpecHash": "vEdPD/3iLc4=",
   "success": true,
   "projectFilePath": "F:\\core\\projects\\github\\revit-model-doctor\\src\\ModelDoctor.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\archdz\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.30\\microsoft.netcore.app.ref.8.0.30.nupkg.sha512",
+    "C:\\Users\\archdz\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.30\\microsoft.windowsdesktop.app.ref.8.0.30.nupkg.sha512",
+    "C:\\Users\\archdz\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.30\\microsoft.aspnetcore.app.ref.8.0.30.nupkg.sha512"
+  ],
   "logs": []
 }

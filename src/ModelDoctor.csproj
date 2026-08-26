@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>false</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -12,17 +12,24 @@
     <Authors>Arman Arisman</Authors>
     <Copyright>Copyright (c) 2026 Arman Arisman. All rights reserved.</Copyright>
     <Version>1.0.0</Version>
-    <Description>Revit 2027 Model Doctor - Rule-Based Health Check Engine Add-In</Description>
+    <Description>Revit Model Doctor - Rule-Based Health Check Engine Add-In for Revit 2025, 2026, and 2027</Description>
   </PropertyGroup>
 
-  <!-- Revit API References -->
+  <!-- Dynamic Revit API References (Prioritize Revit 2025 for net8.0-windows compatibility) -->
+  <PropertyGroup>
+    <RevitVersionDir Condition="Exists('C:\Program Files\Autodesk\Revit 2025\RevitAPI.dll')">C:\Program Files\Autodesk\Revit 2025</RevitVersionDir>
+    <RevitVersionDir Condition="'$(RevitVersionDir)' == '' and Exists('C:\Program Files\Autodesk\Revit 2026\RevitAPI.dll')">C:\Program Files\Autodesk\Revit 2026</RevitVersionDir>
+    <RevitVersionDir Condition="'$(RevitVersionDir)' == '' and Exists('C:\Program Files\Autodesk\Revit 2027\RevitAPI.dll')">C:\Program Files\Autodesk\Revit 2027</RevitVersionDir>
+    <RevitVersionDir Condition="'$(RevitVersionDir)' == ''">C:\Program Files\Autodesk\Revit 2025</RevitVersionDir>
+  </PropertyGroup>
+
   <ItemGroup>
     <Reference Include="RevitAPI">
-      <HintPath>C:\Program Files\Autodesk\Revit 2027\RevitAPI.dll</HintPath>
+      <HintPath>$(RevitVersionDir)\RevitAPI.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="RevitAPIUI">
-      <HintPath>C:\Program Files\Autodesk\Revit 2027\RevitAPIUI.dll</HintPath>
+      <HintPath>$(RevitVersionDir)\RevitAPIUI.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>

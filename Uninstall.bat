@@ -3,15 +3,17 @@ setlocal enabledelayedexpansion
 
 :: ===================================================
 :: Model Doctor Revit Add-In Multi-Version Uninstaller
+:: Supports: Autodesk Revit 2025, 2026, 2027
 :: Created by: Arman Arisman
 :: Copyright (c) 2026 Arman Arisman
 :: License: MIT License (https://opensource.org/licenses/MIT)
 :: ===================================================
 
+title Revit Model Doctor Uninstaller
+
 echo ===================================================
 echo   Model Doctor Revit Add-In Uninstaller
-echo   Created by: Arman Arisman
-echo   License: MIT License (Open Source Software)
+echo   Supports: Revit 2025, 2026, 2027
 echo ===================================================
 echo.
 echo Select target Revit version to uninstall Model Doctor:
@@ -22,6 +24,7 @@ echo   [4] Uninstall from ALL versions (2025, 2026, 2027)
 echo   [5] Cancel
 echo.
 set /p CHOICE="Enter option [1-5]: "
+if defined CHOICE set "CHOICE=%CHOICE: =%"
 
 if "%CHOICE%"=="1" set "VERSIONS=2025"
 if "%CHOICE%"=="2" set "VERSIONS=2026"
